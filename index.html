@@ -85,6 +85,7 @@
             aspect-ratio: 1 / 1.1;
             background: #1a1a1a;
             overflow: hidden;
+            touch-action: pan-y pinch-zoom;
         }
         .img-slides {
             display: flex; height: 100%;
@@ -343,7 +344,7 @@ const SHOE_SIZES = ['36','37','38','39','40','41','42','43','44','45','46'];
 
 let cart=[], products=[], isAdmin=false, currentFilter='all', searchQuery='';
 let editingId=null, isAdding=false, nextId=1, pendingImages=[];
-const gIdx={}, tStartX={};
+const gIdx={}, tStartX={}, touchActive={};
 
 // ─── STORAGE ───
 function saveProducts() {
@@ -418,10 +419,7 @@ function renderProducts() {
 
         return `
         <div class="product-card ${!p.available ? 'sold-out' : ''}">
-            <div class="img-gallery"
-                ontouchstart="tStart(event,${p.id})"
-                ontouchend="tEnd(event,${p.id})"
-                onclick="clickSlide(event,${p.id},${total})">
+            <div class="img-gallery" id="gallery-${p.id}">
                 <div class="img-slides" id="slides-${p.id}" style="transform:translateX(-${curIdx*100}%)">${slides}</div>
                 <div class="badge ${p.available ? 'av' : 'so'}">${p.available ? 'Available' : 'Sold Out'}</div>
                 ${soldOutOverlay}
@@ -451,6 +449,13 @@ function renderProducts() {
             </div>
         </div>`;
     }).join('');
+
+    // Attach touch handlers after rendering
+    document.querySelectorAll('.img-gallery').forEach(gallery => {
+        gallery.addEventListener('touchstart', handleTouchStart, false);
+        gallery.addEventListener('touchend', handleTouchEnd, false);
+        gallery.addEventListener('click', handleClickSlide, false);
+    });
 }
 
 // ─── SEARCH ───
@@ -462,25 +467,45 @@ function handleSearch() {
     renderProducts();
 }
 
-// Gallery
-function clickSlide(e, id, total) {
-    if (total < 2) return;
+// Gallery - Click to navigate
+function handleClickSlide(e) {
     const gallery = e.currentTarget;
+    const id = parseInt(gallery.id.split('-')[1]);
+    const p = products.find(p => p.id === id);
+    if (!p || !p.images || p.images.length < 2) return;
+    
     const rect = gallery.getBoundingClientRect();
     const dir = e.clientX - rect.left > rect.width / 2 ? 1 : -1;
-    const p = products.find(p => p.id === id);
     gIdx[id] = Math.max(0, Math.min((p.images.length - 1), (gIdx[id] || 0) + dir));
     applySlide(id, p.images.length);
 }
-function tStart(e, id) { tStartX[id] = e.touches[0].clientX; }
-function tEnd(e, id) {
+
+// Gallery - Touch swipe
+function handleTouchStart(e) {
+    const gallery = e.currentTarget;
+    const id = parseInt(gallery.id.split('-')[1]);
+    tStartX[id] = e.touches[0].clientX;
+    touchActive[id] = true;
+}
+
+function handleTouchEnd(e) {
+    const gallery = e.currentTarget;
+    const id = parseInt(gallery.id.split('-')[1]);
+    
+    if (!touchActive[id]) return;
+    touchActive[id] = false;
+    
     const diff = tStartX[id] - e.changedTouches[0].clientX;
-    if (Math.abs(diff) < 30) return;
+    if (Math.abs(diff) < 40) return; // Minimum swipe distance
+    
     const p = products.find(p => p.id === id);
     if (!p || !p.images || p.images.length < 2) return;
+    
+    e.preventDefault();
     gIdx[id] = Math.max(0, Math.min(p.images.length - 1, (gIdx[id] || 0) + (diff > 0 ? 1 : -1)));
     applySlide(id, p.images.length);
 }
+
 function applySlide(id, total) {
     const s = document.getElementById(`slides-${id}`);
     if (s) s.style.transform = `translateX(-${gIdx[id] * 100}%)`;
@@ -488,10 +513,10 @@ function applySlide(id, total) {
         const d = document.getElementById(`dot-${id}-${i}`);
         if (d) d.className = 'g-dot' + (i === gIdx[id] ? ' on' : '');
     }
-    // Update counter text (fixed logic)
-    const card = document.querySelector(`[id^="slides-${id}"]`)?.closest('.product-card');
-    if (card) {
-        const counter = card.querySelector('.photo-counter');
+    // Update counter text
+    const gallery = document.getElementById(`gallery-${id}`);
+    if (gallery) {
+        const counter = gallery.querySelector('.photo-counter');
         if (counter) counter.textContent = `${gIdx[id] + 1}/${total}`;
     }
 }
