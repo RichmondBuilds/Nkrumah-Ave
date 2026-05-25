@@ -4,6 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="🟢 Nkrumah Ave - Premium Street Wear Collection. Shop exclusive tees, shorts, hoodies, shoes & bags. Fast delivery in Ghana.">
+    <meta name="theme-color" content="#00ff00">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="🟢 Nkrumah Ave - Street Wear">
+    <meta property="og:description" content="Premium street wear collection. Tees, shorts, hoodies, shoes & bags.">
+    <meta property="og:url" content="https://nkrumah-ave.shop">
+    
     <title>Nkrumah Ave - Street Wear</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,7 +44,8 @@
             font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s;
         }
         .filter-btn.active, .filter-btn:hover { background: #00ff00; color: #000; border-color: #00ff00; }
-        .price-filter { padding: 6px 12px; background: #1a1a1a; color: #00ff00; border: 1px solid #2a2a2a; border-radius: 20px; font-size: 0.72em; cursor: pointer; }
+        .price-filter, .search-input { padding: 6px 12px; background: #1a1a1a; color: #00ff00; border: 1px solid #2a2a2a; border-radius: 20px; font-size: 0.72em; cursor: pointer; }
+        .search-input { cursor: text; flex: 0 1 150px; }
 
         .cart-fab {
             position: fixed; bottom: 24px; right: 20px;
@@ -52,10 +62,10 @@
 
         .container { max-width: 600px; margin: 0 auto; padding: 14px 0 80px; }
 
-        .add-product-wrap { display:none; padding: 12px 14px; }
-        .admin-mode-active .add-product-wrap { display:block; }
-        .add-product-btn {
-            width: 100%; padding: 13px; background: linear-gradient(90deg,#00ff00,#00cc00);
+        .add-product-wrap { display:none; padding: 12px 14px; gap: 8px; }
+        .admin-mode-active .add-product-wrap { display:flex; }
+        .add-product-btn, .view-orders-btn {
+            flex: 1; padding: 13px; background: linear-gradient(90deg,#00ff00,#00cc00);
             color: #000; border: none; border-radius: 10px; font-size: 0.95em;
             font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 2px;
         }
@@ -175,7 +185,7 @@
         /* Cart */
         .cart-item { background:#0d0d0d; padding:12px; margin-bottom:8px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid #2a2a2a; }
         .cart-total { background:linear-gradient(90deg,#00ff00,#00cc00); padding:14px; border-radius:8px; margin-bottom:12px; text-align:center; font-size:1.2em; font-weight:bold; color:#000; }
-        .checkout-btn { width:100%; padding:13px; background:linear-gradient(90deg,#00ff00,#00cc00); color:#000; border:none; border-radius:8px; font-size:0.95em; font-weight:bold; cursor:pointer; text-transform:uppercase; }
+        .checkout-btn { width:100%; padding:13px; background:linear-gradient(90deg,#00ff00,#00cc00); color:#000; border:none; border-radius:8px; font-size:0.95em; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px; }
         .empty-message { text-align:center; padding:40px; color:#555; }
         .remove-btn { background:#ff4444; color:white; border:none; padding:6px 10px; border-radius:5px; cursor:pointer; font-size:0.78em; }
 
@@ -189,7 +199,7 @@
         .type-btn.on { background:#00ff00; color:#000; }
 
         #sizesCheckboxes { display:flex; flex-wrap:wrap; gap:6px; padding:10px; background:#0d0d0d; border:1.5px solid #00ff00; border-radius:8px; }
-        .sz-cb { display:flex; align-items:center; gap:5px; background:#1a1a1a; padding:6px 10px; border-radius:7px; border:1px solid #2a2a2a; cursor:pointer; color:#00ff00; font-size:0.82em; font-weight:bold; }
+        .sz-cb { display:flex; align-items:center; gap:5px; background:#1a1a1a; padding:6px 10px; border-radius:7px; border:1px solid #2a2a2a; cursor:pointer; color:#00ff00; font-size:0.82em; font-weight:600; }
         .sz-cb input { accent-color:#00ff00; width:14px; height:14px; }
 
         .img-preview-list { display:flex; gap:7px; flex-wrap:wrap; margin-top:8px; }
@@ -202,6 +212,16 @@
         .wrong-msg { color:#ff4444; font-size:0.78em; display:none; margin-bottom:8px; }
 
         .empty-grid { text-align:center; color:#333; padding:60px 20px; font-size:0.95em; }
+
+        /* Order History */
+        .order-item { background:#0d0d0d; padding:12px; margin-bottom:8px; border-radius:8px; border:1px solid #2a2a2a; }
+        .order-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .order-date { font-size:0.75em; color:#666; }
+        .order-total { font-weight:bold; color:#00ff00; }
+        .order-items { font-size:0.85em; color:#aaa; line-height:1.5; }
+        .clear-orders-btn { width:100%; padding:9px; background:#ff4444; color:#fff; border:none; border-radius:8px; font-size:0.78em; font-weight:bold; cursor:pointer; margin-top:12px; }
+
+        .success-message { background:#0f2a0f; color:#00ff00; border:1px solid #00ff00; padding:12px; border-radius:8px; margin-bottom:12px; }
     </style>
 
 </head>
@@ -214,6 +234,7 @@
 </header>
 
 <div class="filter-bar">
+    <input type="text" id="searchInput" class="search-input" placeholder="Search..." onkeyup="handleSearch()">
     <button class="filter-btn active" onclick="filterProducts('all',this)">All</button>
     <button class="filter-btn" onclick="filterProducts('tees',this)">Tees</button>
     <button class="filter-btn" onclick="filterProducts('shorts',this)">Shorts</button>
@@ -231,7 +252,8 @@
 
 <div class="container" id="mainContainer">
     <div class="add-product-wrap">
-        <button class="add-product-btn" onclick="openAddModal()">+ ADD NEW PRODUCT</button>
+        <button class="add-product-btn" onclick="openAddModal()">+ ADD PRODUCT</button>
+        <button class="view-orders-btn" onclick="viewOrders()">📋 ORDERS</button>
     </div>
     <div id="productsGrid"></div>
 </div>
@@ -303,38 +325,105 @@
     </div>
 </div>
 
+<!-- Orders History -->
+
+<div class="modal" id="ordersModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeOrdersModal()">&times;</span>
+        <div class="modal-header">Order History</div>
+        <div id="ordersContainer"></div>
+    </div>
+</div>
+
 <script>
 const WHATSAPP = '233207447665';
 const ADMIN_PW = 'nkrumah2025';
 const CLOTHING_SIZES = ['XS','S','M','L','XL','XXL','XXXL'];
 const SHOE_SIZES = ['36','37','38','39','40','41','42','43','44','45','46'];
 
-let cart=[], products=[], isAdmin=false, currentFilter='all';
+let cart=[], products=[], isAdmin=false, currentFilter='all', searchQuery='';
 let editingId=null, isAdding=false, nextId=1, pendingImages=[];
 const gIdx={}, tStartX={};
 
+// ─── STORAGE ───
+function saveProducts() {
+    localStorage.setItem('nkrumah_products', JSON.stringify(products));
+}
+function loadProducts() {
+    const saved = localStorage.getItem('nkrumah_products');
+    if (saved) {
+        try {
+            products = JSON.parse(saved);
+            nextId = Math.max(...products.map(p => p.id), 0) + 1;
+        } catch (e) {
+            console.error('Failed to load products:', e);
+            products = [];
+        }
+    }
+}
+function saveCart() {
+    localStorage.setItem('nkrumah_cart', JSON.stringify(cart));
+}
+function loadCart() {
+    const saved = localStorage.getItem('nkrumah_cart');
+    if (saved) {
+        try {
+            cart = JSON.parse(saved);
+            updateCartUI();
+        } catch (e) {
+            console.error('Failed to load cart:', e);
+        }
+    }
+}
+function saveOrders(orders) {
+    localStorage.setItem('nkrumah_orders', JSON.stringify(orders));
+}
+function loadOrders() {
+    const saved = localStorage.getItem('nkrumah_orders');
+    return saved ? JSON.parse(saved) : [];
+}
+
+// ─── RENDER ───
 function renderProducts() {
     const grid = document.getElementById('productsGrid');
-    let list = currentFilter==='all' ? products : products.filter(p=>p.category===currentFilter);
-    if (!list.length) { grid.innerHTML=`<div class="empty-grid">${isAdmin?'No products. Tap + ADD NEW PRODUCT to start.':'No products here yet. Check back soon!'}</div>`; return; }
+    let list = products;
+    
+    // Apply filter
+    if (currentFilter !== 'all') {
+        list = list.filter(p => p.category === currentFilter);
+    }
+    
+    // Apply search
+    if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter(p => 
+            p.name.toLowerCase().includes(q) || 
+            p.brand.toLowerCase().includes(q)
+        );
+    }
+    
+    if (!list.length) {
+        grid.innerHTML = `<div class="empty-grid">${isAdmin ? 'No products. Tap + ADD PRODUCT to start.' : 'No products here yet. Check back soon!'}</div>`;
+        return;
+    }
 
     grid.innerHTML = list.map(p => {
         const imgs = p.images && p.images.length ? p.images : [null];
         const total = imgs.length;
         const curIdx = gIdx[p.id] || 0;
-        const slides = imgs.map(img => `<div class="img-slide">${img?`<img src="${img}" alt="${p.name}">`:(p.category==='shoes'?'👟':'👕')}</div>`).join('');
-        const dots = total>1 ? `<div class="gallery-dots">${imgs.map((_,i)=>`<div class="g-dot ${i===curIdx?'on':''}" id="dot-${p.id}-${i}"></div>`).join('')}</div>` : '';
-        const counter = total>1 ? `<div class="photo-counter">${curIdx+1}/${total}</div>` : '';
+        const slides = imgs.map(img => `<div class="img-slide">${img ? `<img src="${img}" alt="${p.name}">` : (p.category === 'shoes' ? '👟' : '👕')}</div>`).join('');
+        const dots = total > 1 ? `<div class="gallery-dots">${imgs.map((_, i) => `<div class="g-dot ${i === curIdx ? 'on' : ''}" id="dot-${p.id}-${i}"></div>`).join('')}</div>` : '';
+        const counter = total > 1 ? `<div class="photo-counter">${curIdx + 1}/${total}</div>` : '';
         const soldOutOverlay = !p.available ? `<div class="sold-out-overlay">SOLD OUT</div>` : '';
 
         return `
-        <div class="product-card ${!p.available?'sold-out':''}">
+        <div class="product-card ${!p.available ? 'sold-out' : ''}">
             <div class="img-gallery"
                 ontouchstart="tStart(event,${p.id})"
                 ontouchend="tEnd(event,${p.id})"
                 onclick="clickSlide(event,${p.id},${total})">
                 <div class="img-slides" id="slides-${p.id}" style="transform:translateX(-${curIdx*100}%)">${slides}</div>
-                <div class="badge ${p.available?'av':'so'}">${p.available?'Available':'Sold Out'}</div>
+                <div class="badge ${p.available ? 'av' : 'so'}">${p.available ? 'Available' : 'Sold Out'}</div>
                 ${soldOutOverlay}
                 ${dots}${counter}
                 <button class="edit-overlay-btn" onclick="event.stopPropagation();openEditModal(${p.id})">✏️ Edit</button>
@@ -347,21 +436,30 @@ function renderProducts() {
                 <div class="sel-row">
                     <div class="sel-group">
                         <div class="sel-label">Size</div>
-                        <select id="size-${p.id}">${(p.sizes||[]).map(s=>`<option>${s}</option>`).join('')}</select>
+                        <select id="size-${p.id}">${(p.sizes || []).map(s => `<option>${s}</option>`).join('')}</select>
                     </div>
                     <div class="sel-group">
                         <div class="sel-label">Color</div>
-                        <select id="color-${p.id}">${(p.colors||['Black']).map(c=>`<option>${c}</option>`).join('')}</select>
+                        <select id="color-${p.id}">${(p.colors || ['Black']).map(c => `<option>${c}</option>`).join('')}</select>
                     </div>
                 </div>
-                <button class="atc-btn" onclick="addToCart(${p.id})" ${!p.available?'disabled':''}>${p.available?'ADD TO CART':'SOLD OUT'}</button>
+                <button class="atc-btn" onclick="addToCart(${p.id})" ${!p.available ? 'disabled' : ''}>${p.available ? 'ADD TO CART' : 'SOLD OUT'}</button>
                 <div class="admin-actions">
-                    <button class="stock-btn ${p.available?'av':'so'}" onclick="toggleStock(${p.id})">${p.available?'Mark Sold Out':'Mark Available'}</button>
+                    <button class="stock-btn ${p.available ? 'av' : 'so'}" onclick="toggleStock(${p.id})">${p.available ? 'Mark Sold Out' : 'Mark Available'}</button>
                     <button class="del-btn" onclick="deleteProduct(${p.id})">🗑 Delete</button>
                 </div>
             </div>
         </div>`;
     }).join('');
+}
+
+// ─── SEARCH ───
+function handleSearch() {
+    searchQuery = document.getElementById('searchInput').value;
+    currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.filter-btn')[0].classList.add('active');
+    renderProducts();
 }
 
 // Gallery
@@ -370,176 +468,246 @@ function clickSlide(e, id, total) {
     const gallery = e.currentTarget;
     const rect = gallery.getBoundingClientRect();
     const dir = e.clientX - rect.left > rect.width / 2 ? 1 : -1;
-    const p = products.find(p=>p.id===id);
-    gIdx[id] = Math.max(0, Math.min((p.images.length-1), (gIdx[id]||0)+dir));
+    const p = products.find(p => p.id === id);
+    gIdx[id] = Math.max(0, Math.min((p.images.length - 1), (gIdx[id] || 0) + dir));
     applySlide(id, p.images.length);
 }
-function tStart(e,id){ tStartX[id]=e.touches[0].clientX; }
-function tEnd(e,id){
-    const diff = tStartX[id]-e.changedTouches[0].clientX;
-    if(Math.abs(diff)<30) return;
-    const p=products.find(p=>p.id===id);
-    if(!p||!p.images||p.images.length<2) return;
-    gIdx[id]=Math.max(0,Math.min(p.images.length-1,(gIdx[id]||0)+(diff>0?1:-1)));
-    applySlide(id,p.images.length);
+function tStart(e, id) { tStartX[id] = e.touches[0].clientX; }
+function tEnd(e, id) {
+    const diff = tStartX[id] - e.changedTouches[0].clientX;
+    if (Math.abs(diff) < 30) return;
+    const p = products.find(p => p.id === id);
+    if (!p || !p.images || p.images.length < 2) return;
+    gIdx[id] = Math.max(0, Math.min(p.images.length - 1, (gIdx[id] || 0) + (diff > 0 ? 1 : -1)));
+    applySlide(id, p.images.length);
 }
-function applySlide(id,total){
-    const s=document.getElementById(`slides-${id}`);
-    if(s) s.style.transform=`translateX(-${gIdx[id]*100}%)`;
-    const counter=document.querySelector(`#card-wrap-${id} .photo-counter`);
-    for(let i=0;i<total;i++){
-        const d=document.getElementById(`dot-${id}-${i}`);
-        if(d) d.className='g-dot'+(i===gIdx[id]?' on':'');
+function applySlide(id, total) {
+    const s = document.getElementById(`slides-${id}`);
+    if (s) s.style.transform = `translateX(-${gIdx[id] * 100}%)`;
+    for (let i = 0; i < total; i++) {
+        const d = document.getElementById(`dot-${id}-${i}`);
+        if (d) d.className = 'g-dot' + (i === gIdx[id] ? ' on' : '');
     }
-    // update counter text
-    const allCounters = document.querySelectorAll('.photo-counter');
-    allCounters.forEach(c=>{
-        const card=c.closest('.product-card');
-        if(card){
-            const pid=parseInt(card.querySelector('.atc-btn').getAttribute('onclick').match(/\d+/)[0]);
-            if(pid===id) c.textContent=`${gIdx[id]+1}/${total}`;
-        }
-    });
+    // Update counter text (fixed logic)
+    const card = document.querySelector(`[id^="slides-${id}"]`)?.closest('.product-card');
+    if (card) {
+        const counter = card.querySelector('.photo-counter');
+        if (counter) counter.textContent = `${gIdx[id] + 1}/${total}`;
+    }
 }
 
 // Image preview
-function previewImages(input){
-    const list=document.getElementById('imgPreviewList');
-    list.innerHTML=''; pendingImages=[];
-    Array.from(input.files).slice(0,5).forEach(file=>{
-        const reader=new FileReader();
-        reader.onload=e=>{
+function previewImages(input) {
+    const list = document.getElementById('imgPreviewList');
+    list.innerHTML = ''; pendingImages = [];
+    Array.from(input.files).slice(0, 5).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
             pendingImages.push(e.target.result);
-            const wrap=document.createElement('div'); wrap.className='img-thumb-wrap';
-            wrap.innerHTML=`<img class="img-thumb" src="${e.target.result}"><button class="img-rm" onclick="rmImg(this,'${e.target.result}')">×</button>`;
+            const wrap = document.createElement('div'); wrap.className = 'img-thumb-wrap';
+            wrap.innerHTML = `<img class="img-thumb" src="${e.target.result}"><button class="img-rm" onclick="rmImg(this,'${e.target.result}')">×</button>`;
             list.appendChild(wrap);
         };
         reader.readAsDataURL(file);
     });
 }
-function rmImg(btn,src){ pendingImages=pendingImages.filter(s=>s!==src); btn.parentElement.remove(); }
+function rmImg(btn, src) { pendingImages = pendingImages.filter(s => s !== src); btn.parentElement.remove(); }
 
 // Filters
-function filterProducts(cat,btn){ currentFilter=cat; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderProducts(); }
-function sortByPrice(d){ if(d==='low')products.sort((a,b)=>a.price-b.price); else if(d==='high')products.sort((a,b)=>b.price-a.price); renderProducts(); }
-
-// Product type
-function setProductType(type){
-    document.getElementById('editType').value=type;
-    document.getElementById('btnClothing').className='type-btn'+(type==='clothing'?' on':'');
-    document.getElementById('btnShoes').className='type-btn'+(type==='shoes'?' on':'');
-    updateSizeCheckboxes([]);
+function filterProducts(cat, btn) {
+    currentFilter = cat;
+    searchQuery = '';
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderProducts();
 }
-function updateSizeCheckboxes(sel=[]){
-    const sizes=document.getElementById('editType').value==='shoes'?SHOE_SIZES:CLOTHING_SIZES;
-    document.getElementById('sizesCheckboxes').innerHTML=sizes.map(s=>`<label class="sz-cb"><input type="checkbox" value="${s}" ${sel.includes(s)?'checked':''}> ${s}</label>`).join('');
-}
-function getSelectedSizes(){ return Array.from(document.querySelectorAll('#sizesCheckboxes input:checked')).map(c=>c.value); }
-
-// Add/Edit modal
-function openAddModal(){
-    isAdding=true; editingId=null; pendingImages=[];
-    document.getElementById('editModalTitle').textContent='Add Product';
-    document.getElementById('editName').value='';
-    document.getElementById('editBrand').value='';
-    document.getElementById('editPrice').value='';
-    document.getElementById('editCategory').value='tees';
-    document.getElementById('editColors').value='Black, White';
-    document.getElementById('editImages').value='';
-    document.getElementById('imgPreviewList').innerHTML='';
-    setProductType('clothing');
-    document.getElementById('editModal').classList.add('active');
-}
-function openEditModal(id){
-    if(!isAdmin) return;
-    isAdding=false; editingId=id;
-    const p=products.find(p=>p.id===id); if(!p) return;
-    pendingImages=p.images?[...p.images]:[];
-    document.getElementById('editModalTitle').textContent='Edit Product';
-    document.getElementById('editName').value=p.name;
-    document.getElementById('editBrand').value=p.brand;
-    document.getElementById('editPrice').value=p.price;
-    document.getElementById('editCategory').value=p.category;
-    document.getElementById('editColors').value=p.colors.join(', ');
-    document.getElementById('editImages').value='';
-    document.getElementById('imgPreviewList').innerHTML=pendingImages.map(src=>`<div class="img-thumb-wrap"><img class="img-thumb" src="${src}"><button class="img-rm" onclick="rmImg(this,'${src}')">×</button></div>`).join('');
-    setProductType(p.type||'clothing');
-    updateSizeCheckboxes(p.sizes||[]);
-    document.getElementById('editModal').classList.add('active');
-}
-function closeEditModal(){ document.getElementById('editModal').classList.remove('active'); }
-
-function saveProductEdit(){
-    const name=document.getElementById('editName').value.trim();
-    const brand=document.getElementById('editBrand').value.trim();
-    const price=parseFloat(document.getElementById('editPrice').value)||0;
-    const category=document.getElementById('editCategory').value;
-    const type=document.getElementById('editType').value;
-    const colors=document.getElementById('editColors').value.split(',').map(c=>c.trim()).filter(Boolean);
-    const sizes=getSelectedSizes();
-    if(!name||!brand||!price){alert('Please fill Name, Brand and Price.');return;}
-    setTimeout(()=>{
-        const imgs=pendingImages.length?pendingImages:[];
-        if(isAdding){
-            products.push({id:nextId++,name,brand,price,category,type,sizes:sizes.length?sizes:(type==='shoes'?SHOE_SIZES:CLOTHING_SIZES),colors:colors.length?colors:['Black'],images:imgs,available:true});
-        } else {
-            const p=products.find(p=>p.id===editingId); if(!p)return;
-            Object.assign(p,{name,brand,price,category,type,sizes:sizes.length?sizes:p.sizes,colors:colors.length?colors:p.colors,images:imgs.length?imgs:p.images});
-        }
-        renderProducts(); closeEditModal();
-    },300);
-}
-
-// Stock/Delete
-function toggleStock(id){const p=products.find(p=>p.id===id);if(p){p.available=!p.available;renderProducts();}}
-function deleteProduct(id){if(!confirm('Delete this product?'))return;products=products.filter(p=>p.id!==id);renderProducts();}
-
-// Cart
-function addToCart(id){
-    const p=products.find(p=>p.id===id);if(!p||!p.available)return;
-    cart.push({id:Date.now(),name:p.name,brand:p.brand,price:p.price,size:document.getElementById(`size-${id}`).value,color:document.getElementById(`color-${id}`).value});
-    updateCartUI();
-}
-function removeFromCart(i){cart.splice(i,1);updateCartUI();}
-function updateCartUI(){
-    document.getElementById('cartCount').textContent=cart.length;
-    const items=document.getElementById('cartItems');
-    const empty=document.getElementById('emptyCartMsg');
-    const summary=document.getElementById('cartSummary');
-    if(!cart.length){items.innerHTML='';empty.style.display='block';summary.style.display='none';return;}
-    empty.style.display='none';summary.style.display='block';
-    items.innerHTML=cart.map((item,i)=>`<div class="cart-item"><div><strong>${item.brand} — ${item.name}</strong><br>Size: ${item.size} | Color: ${item.color}<br><span style="color:#00ff00;">GHS ${item.price}</span></div><button class="remove-btn" onclick="removeFromCart(${i})">Remove</button></div>`).join('');
-    document.getElementById('totalAmount').textContent=`Total: GHS ${cart.reduce((s,i)=>s+i.price,0).toLocaleString()}`;
-}
-function toggleCart(){document.getElementById('cartModal').classList.toggle('active');}
-function checkout(){
-    if(!cart.length)return;
-    let msg='🛍️ *NKRUMAH AVE ORDER* 🛍️\n━━━━━━━━━━━━━━━━\n\n';
-    cart.forEach((item,i)=>{msg+=`*${i+1}. ${item.brand.toUpperCase()}*\n   ${item.name}\n   🎨 ${item.color} | 📏 ${item.size}\n   💵 GHS ${item.price}\n\n`;});
-    msg+=`━━━━━━━━━━━━━━━━\n💰 *TOTAL: GHS ${cart.reduce((s,i)=>s+i.price,0).toLocaleString()}*\n━━━━━━━━━━━━━━━━\n✅ Please confirm your order\n🙏 Thank you for shopping at *NKRUMAH AVE*!`;
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`,'_blank');
-}
-
-// Admin
-let tapCount=0,tapTimer=null;
-function handleLogoTap(){
-    tapCount++;clearTimeout(tapTimer);
-    tapTimer=setTimeout(()=>tapCount=0,2000);
-    if(tapCount>=5){tapCount=0;isAdmin?toggleAdminMode(false):(document.getElementById('passwordModal').classList.add('active'),setTimeout(()=>document.getElementById('passwordInput').focus(),100));}
-}
-function checkPassword(){
-    if(document.getElementById('passwordInput').value===ADMIN_PW){closePasswordModal();toggleAdminMode(true);}
-    else{document.getElementById('wrongMsg').style.display='block';document.getElementById('passwordInput').value='';}
-}
-function closePasswordModal(){document.getElementById('passwordModal').classList.remove('active');document.getElementById('passwordInput').value='';document.getElementById('wrongMsg').style.display='none';}
-function toggleAdminMode(on){
-    isAdmin=on;
-    document.getElementById('adminBanner').classList.toggle('visible',on);
-    document.getElementById('mainContainer').classList.toggle('admin-mode-active',on);
+function sortByPrice(d) {
+    if (d === 'low') products.sort((a, b) => a.price - b.price);
+    else if (d === 'high') products.sort((a, b) => b.price - a.price);
     renderProducts();
 }
 
+// Product type
+function setProductType(type) {
+    document.getElementById('editType').value = type;
+    document.getElementById('btnClothing').className = 'type-btn' + (type === 'clothing' ? ' on' : '');
+    document.getElementById('btnShoes').className = 'type-btn' + (type === 'shoes' ? ' on' : '');
+    updateSizeCheckboxes([]);
+}
+function updateSizeCheckboxes(sel = []) {
+    const sizes = document.getElementById('editType').value === 'shoes' ? SHOE_SIZES : CLOTHING_SIZES;
+    document.getElementById('sizesCheckboxes').innerHTML = sizes.map(s => `<label class="sz-cb"><input type="checkbox" value="${s}" ${sel.includes(s) ? 'checked' : ''}> ${s}</label>`).join('');
+}
+function getSelectedSizes() { return Array.from(document.querySelectorAll('#sizesCheckboxes input:checked')).map(c => c.value); }
+
+// Add/Edit modal
+function openAddModal() {
+    isAdding = true; editingId = null; pendingImages = [];
+    document.getElementById('editModalTitle').textContent = 'Add Product';
+    document.getElementById('editName').value = '';
+    document.getElementById('editBrand').value = '';
+    document.getElementById('editPrice').value = '';
+    document.getElementById('editCategory').value = 'tees';
+    document.getElementById('editColors').value = 'Black, White';
+    document.getElementById('editImages').value = '';
+    document.getElementById('imgPreviewList').innerHTML = '';
+    setProductType('clothing');
+    document.getElementById('editModal').classList.add('active');
+}
+function openEditModal(id) {
+    if (!isAdmin) return;
+    isAdding = false; editingId = id;
+    const p = products.find(p => p.id === id); if (!p) return;
+    pendingImages = p.images ? [...p.images] : [];
+    document.getElementById('editModalTitle').textContent = 'Edit Product';
+    document.getElementById('editName').value = p.name;
+    document.getElementById('editBrand').value = p.brand;
+    document.getElementById('editPrice').value = p.price;
+    document.getElementById('editCategory').value = p.category;
+    document.getElementById('editColors').value = p.colors.join(', ');
+    document.getElementById('editImages').value = '';
+    document.getElementById('imgPreviewList').innerHTML = pendingImages.map(src => `<div class="img-thumb-wrap"><img class="img-thumb" src="${src}"><button class="img-rm" onclick="rmImg(this,'${src}')">×</button></div>`).join('');
+    setProductType(p.type || 'clothing');
+    updateSizeCheckboxes(p.sizes || []);
+    document.getElementById('editModal').classList.add('active');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('active'); }
+
+function saveProductEdit() {
+    const name = document.getElementById('editName').value.trim();
+    const brand = document.getElementById('editBrand').value.trim();
+    const price = parseFloat(document.getElementById('editPrice').value) || 0;
+    const category = document.getElementById('editCategory').value;
+    const type = document.getElementById('editType').value;
+    const colors = document.getElementById('editColors').value.split(',').map(c => c.trim()).filter(Boolean);
+    const sizes = getSelectedSizes();
+    if (!name || !brand || !price) { alert('Please fill Name, Brand and Price.'); return; }
+    setTimeout(() => {
+        const imgs = pendingImages.length ? pendingImages : [];
+        if (isAdding) {
+            products.push({ id: nextId++, name, brand, price, category, type, sizes: sizes.length ? sizes : (type === 'shoes' ? SHOE_SIZES : CLOTHING_SIZES), colors: colors.length ? colors : ['Black'], images: imgs, available: true });
+        } else {
+            const p = products.find(p => p.id === editingId); if (!p) return;
+            Object.assign(p, { name, brand, price, category, type, sizes: sizes.length ? sizes : p.sizes, colors: colors.length ? colors : p.colors, images: imgs.length ? imgs : p.images });
+        }
+        saveProducts();
+        renderProducts(); closeEditModal();
+    }, 300);
+}
+
+// Stock/Delete
+function toggleStock(id) {
+    const p = products.find(p => p.id === id);
+    if (p) { p.available = !p.available; saveProducts(); renderProducts(); }
+}
+function deleteProduct(id) {
+    if (!confirm('Delete this product?')) return;
+    products = products.filter(p => p.id !== id);
+    saveProducts();
+    renderProducts();
+}
+
+// Cart
+function addToCart(id) {
+    const p = products.find(p => p.id === id); if (!p || !p.available) return;
+    cart.push({ id: Date.now(), name: p.name, brand: p.brand, price: p.price, size: document.getElementById(`size-${id}`).value, color: document.getElementById(`color-${id}`).value });
+    saveCart();
+    updateCartUI();
+}
+function removeFromCart(i) { cart.splice(i, 1); saveCart(); updateCartUI(); }
+function updateCartUI() {
+    document.getElementById('cartCount').textContent = cart.length;
+    const items = document.getElementById('cartItems');
+    const empty = document.getElementById('emptyCartMsg');
+    const summary = document.getElementById('cartSummary');
+    if (!cart.length) { items.innerHTML = ''; empty.style.display = 'block'; summary.style.display = 'none'; return; }
+    empty.style.display = 'none'; summary.style.display = 'block';
+    items.innerHTML = cart.map((item, i) => `<div class="cart-item"><div><strong>${item.brand} — ${item.name}</strong><br>Size: ${item.size} | Color: ${item.color}<br><span style="color:#00ff00;">GHS ${item.price}</span></div><button class="remove-btn" onclick="removeFromCart(${i})">Remove</button></div>`).join('');
+    document.getElementById('totalAmount').textContent = `Total: GHS ${cart.reduce((s, i) => s + i.price, 0).toLocaleString()}`;
+}
+function toggleCart() { document.getElementById('cartModal').classList.toggle('active'); }
+function checkout() {
+    if (!cart.length) return;
+    let msg = '🛍️ *NKRUMAH AVE ORDER* 🛍️\n━━━━━━━━━━━━━━━━\n\n';
+    cart.forEach((item, i) => { msg += `*${i + 1}. ${item.brand.toUpperCase()}*\n   ${item.name}\n   🎨 ${item.color} | 📏 ${item.size}\n   💵 GHS ${item.price}\n\n`; });
+    const total = cart.reduce((s, i) => s + i.price, 0);
+    msg += `━━━━━━━━━━━━━━━━\n💰 *TOTAL: GHS ${total.toLocaleString()}*\n━━━━━━━━━━━━━━━━\n✅ Please confirm and proceed with payment. Thank you! 🙏`;
+    
+    // Save order
+    const orders = loadOrders();
+    orders.push({
+        id: Date.now(),
+        date: new Date().toLocaleString(),
+        items: [...cart],
+        total: total
+    });
+    saveOrders(orders);
+    
+    // Clear cart
+    cart = [];
+    saveCart();
+    updateCartUI();
+    toggleCart();
+    
+    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// Orders
+function viewOrders() {
+    if (!isAdmin) return;
+    const orders = loadOrders();
+    const container = document.getElementById('ordersContainer');
+    
+    if (!orders.length) {
+        container.innerHTML = '<div class="empty-message">No orders yet 📭</div>';
+    } else {
+        container.innerHTML = orders.reverse().map(order => `
+            <div class="order-item">
+                <div class="order-header">
+                    <span class="order-date">${order.date}</span>
+                    <span class="order-total">GHS ${order.total.toLocaleString()}</span>
+                </div>
+                <div class="order-items">
+                    ${order.items.map((item, i) => `${i + 1}. ${item.brand} — ${item.name} (${item.size}, ${item.color}) • GHS ${item.price}`).join('<br>')}
+                </div>
+            </div>
+        `).join('');
+        container.innerHTML += `<button class="clear-orders-btn" onclick="clearAllOrders()">🗑 Clear All Orders</button>`;
+    }
+    document.getElementById('ordersModal').classList.add('active');
+}
+function closeOrdersModal() { document.getElementById('ordersModal').classList.remove('active'); }
+function clearAllOrders() {
+    if (confirm('Clear all orders? This cannot be undone.')) {
+        saveOrders([]);
+        viewOrders();
+    }
+}
+
+// Admin
+let tapCount = 0, tapTimer = null;
+function handleLogoTap() {
+    tapCount++; clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => tapCount = 0, 2000);
+    if (tapCount >= 5) { tapCount = 0; isAdmin ? toggleAdminMode(false) : (document.getElementById('passwordModal').classList.add('active'), setTimeout(() => document.getElementById('passwordInput').focus(), 100)); }
+}
+function checkPassword() {
+    if (document.getElementById('passwordInput').value === ADMIN_PW) { closePasswordModal(); toggleAdminMode(true); }
+    else { document.getElementById('wrongMsg').style.display = 'block'; document.getElementById('passwordInput').value = ''; }
+}
+function closePasswordModal() { document.getElementById('passwordModal').classList.remove('active'); document.getElementById('passwordInput').value = ''; document.getElementById('wrongMsg').style.display = 'none'; }
+function toggleAdminMode(on) {
+    isAdmin = on;
+    document.getElementById('adminBanner').classList.toggle('visible', on);
+    document.getElementById('mainContainer').classList.toggle('admin-mode-active', on);
+    renderProducts();
+}
+
+// Initialize
 setProductType('clothing');
+loadProducts();
+loadCart();
 renderProducts();
 </script>
 
