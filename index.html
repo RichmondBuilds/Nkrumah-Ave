@@ -793,6 +793,59 @@ function applyCoupon(){
     if(COUPONS[code]){appliedCoupon={code,...COUPONS[code]};result.className='coupon-result valid';result.textContent=`✅ ${COUPONS[code].label}`;result.style.display='block';updateCartUI();showNotification('🎉 Coupon applied!');}
     else{appliedCoupon=null;result.className='coupon-result invalid';result.textContent='❌ Invalid code';result.style.display='block';}
 }
+// ==================== CHECKOUT FUNCTION ====================
+function checkout(type) {
+    if (cart.length === 0) {
+        showNotification("🛒 Your cart is empty!");
+        return;
+    }
+
+    let total = cart.reduce((s, i) => s + i.price, 0);
+
+    let message = `🛍️ *NEW ORDER - NKRUMAH AVE*\n\n`;
+
+    cart.forEach((item, index) => {
+        message += `${index + 1}. ${item.brand} - ${item.name}\n`;
+        message += `   Size: ${item.size || 'N/A'} | Color: ${item.color || 'N/A'}\n`;
+        message += `   💰 GHS ${item.price}\n\n`;
+    });
+
+    message += `─────────────────\n`;
+    message += `💰 *Total: GHS ${total}*\n\n`;
+    message += `📍 Delivery Region: ________________\n`;
+    message += `👤 Full Name: ________________\n`;
+    message += `📱 Phone Number: ________________\n\n`;
+    message += `Payment: ${type.toUpperCase()}`;
+
+    if (type === 'whatsapp') {
+        const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
+        showNotification("📲 Opening WhatsApp...");
+        saveOrderToHistory();
+    } else {
+        alert(`💰 Pay GHS ${total} via ${type.toUpperCase()} to +233 207 447 665\n\nThen send payment proof on WhatsApp.`);
+        saveOrderToHistory();
+    }
+}
+
+function saveOrderToHistory() {
+    let orders = loadOrders();
+    const newOrder = {
+        id: 'ORD-' + Date.now().toString().slice(-8),
+        date: new Date().toLocaleDateString('en-GB'),
+        items: [...cart],
+        total: cart.reduce((sum, i) => sum + i.price, 0),
+        status: "Pending"
+    };
+    orders.unshift(newOrder);
+    saveOrders(orders);
+    
+    cart = [];
+    saveCart();
+    updateCartUI();
+    toggleCart();
+    showNotification("✅ Order received! Check 'Orders'");
+}
 </script>
 
 </body>
