@@ -513,8 +513,8 @@
 
 <!-- Edit/Add Product -->
 
-<div class="overlay-modal" id="editModal">
-    <div class="modal-content">
+<div class="overlay-modal" id="editModal" style="align-items:flex-start;padding-top:0;">
+    <div class="modal-content" style="margin-top:0;border-radius:0 0 14px 14px;width:100%;max-width:100%;min-height:100vh;">
         <span class="close-btn" onclick="closeEditModal()">&times;</span>
         <div class="modal-header" id="editModalTitle">Add Product</div>
         <div class="form-group"><label>Type</label><div class="type-btns"><button type="button" id="btnClothing" class="type-btn on" onclick="setProductType('clothing')">👕 CLOTHING</button><button type="button" id="btnShoes" class="type-btn" onclick="setProductType('shoes')">👟 SHOES</button></div><input type="hidden" id="editType" value="clothing"></div>
