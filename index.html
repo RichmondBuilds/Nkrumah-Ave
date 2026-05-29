@@ -404,6 +404,7 @@
             <div class="coupon-result" id="couponResult"></div>
             <div class="cart-total" id="totalAmount">Total: GHS 0</div>
             <button class="checkout-btn" onclick="checkout('whatsapp')">💬 WhatsApp Checkout</button>
+            <button class="checkout-btn" style="background:linear-gradient(90deg,#0052cc,#0077ff);color:#fff;" onclick="paystackPay()">💳 Pay with Card / MoMo</button>
             <button class="payment-btn" onclick="checkout('mtn')">📱 MTN Mobile Money</button>
             <button class="payment-btn" onclick="checkout('vodafone')">📞 Vodafone Cash</button>
         </div>
@@ -559,6 +560,8 @@
 </div>
 
 <div class="notification" id="notification"></div>
+
+<script src="https://js.paystack.co/v1/inline.js"></script>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -792,6 +795,39 @@ function applyCoupon(){
     if(!code){result.style.display='none';return;}
     if(COUPONS[code]){appliedCoupon={code,...COUPONS[code]};result.className='coupon-result valid';result.textContent=`✅ ${COUPONS[code].label}`;result.style.display='block';updateCartUI();showNotification('🎉 Coupon applied!');}
     else{appliedCoupon=null;result.className='coupon-result invalid';result.textContent='❌ Invalid code';result.style.display='block';}
+}
+function paystackPay(){
+    if(!cart.length){showNotification('Your cart is empty');return;}
+    let base=cart.reduce((s,i)=>s+i.price,0),disc=0;
+    if(appliedCoupon&&appliedCoupon.type==='percent')disc=Math.round(base*appliedCoupon.discount/100);
+    const final=base-disc;
+    const email=prompt('Enter your email address for receipt:');
+    if(!email||!email.includes('@')){showNotification('Valid email required');return;}
+    const handler=PaystackPop.setup({
+        key:'pk_test_67804438cc54da37436a0eebc7dfad11182505da',
+        email:email,
+        amount:final*100,
+        currency:'GHS',
+        ref:'NK'+Date.now(),
+        label:'Nkrumah Ave Order',
+        metadata:{
+            custom_fields:[{display_name:'Order Items',variable_name:'items',value:cart.map(i=>`${i.name} (${i.size||'-'}, ${i.color||'-'})`).join(', ')}]
+        },
+        callback:function(response){
+            const orders=loadOrders();
+            orders.push({id:Date.now(),date:new Date().toLocaleString(),items:[...cart],total:final,method:'paystack',ref:response.reference,status:1});
+            saveOrders(orders);
+            cart=[];appliedCoupon=null;saveCart();updateCartUI();
+            document.getElementById('cartModal').classList.remove('active');
+            document.getElementById('couponInput').value='';
+            document.getElementById('couponResult').style.display='none';
+            showNotification('✅ Payment successful! Ref: '+response.reference,5000);
+            const msg=`✅ *NKRUMAH AVE — PAYMENT CONFIRMED*\nRef: ${response.reference}\nTotal: GHS ${final.toLocaleString()}\n\nPlease confirm dispatch. Thank you!`;
+            setTimeout(()=>{window.location.href='https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(msg);},2000);
+        },
+        onClose:function(){showNotification('Payment cancelled');}
+    });
+    handler.openIframe();
 }
 function checkout(method){
     if(!cart.length)return;
