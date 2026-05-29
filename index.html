@@ -793,59 +793,110 @@ function applyCoupon(){
     if(COUPONS[code]){appliedCoupon={code,...COUPONS[code]};result.className='coupon-result valid';result.textContent=`✅ ${COUPONS[code].label}`;result.style.display='block';updateCartUI();showNotification('🎉 Coupon applied!');}
     else{appliedCoupon=null;result.className='coupon-result invalid';result.textContent='❌ Invalid code';result.style.display='block';}
 }
-// ==================== CHECKOUT FUNCTION ====================
-function checkout(type) {
-    if (cart.length === 0) {
-        showNotification("🛒 Your cart is empty!");
-        return;
-    }
-
-    let total = cart.reduce((s, i) => s + i.price, 0);
-
-    let message = `🛍️ *NEW ORDER - NKRUMAH AVE*\n\n`;
-
-    cart.forEach((item, index) => {
-        message += `${index + 1}. ${item.brand} - ${item.name}\n`;
-        message += `   Size: ${item.size || 'N/A'} | Color: ${item.color || 'N/A'}\n`;
-        message += `   💰 GHS ${item.price}\n\n`;
-    });
-
-    message += `─────────────────\n`;
-    message += `💰 *Total: GHS ${total}*\n\n`;
-    message += `📍 Delivery Region: ________________\n`;
-    message += `👤 Full Name: ________________\n`;
-    message += `📱 Phone Number: ________________\n\n`;
-    message += `Payment: ${type.toUpperCase()}`;
-
-    if (type === 'whatsapp') {
-        const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
-        showNotification("📲 Opening WhatsApp...");
-        saveOrderToHistory();
-    } else {
-        alert(`💰 Pay GHS ${total} via ${type.toUpperCase()} to +233 207 447 665\n\nThen send payment proof on WhatsApp.`);
-        saveOrderToHistory();
-    }
-}
-
-function saveOrderToHistory() {
-    let orders = loadOrders();
-    const newOrder = {
-        id: 'ORD-' + Date.now().toString().slice(-8),
-        date: new Date().toLocaleDateString('en-GB'),
-        items: [...cart],
-        total: cart.reduce((sum, i) => sum + i.price, 0),
-        status: "Pending"
-    };
-    orders.unshift(newOrder);
+function checkout(method){
+    if(!cart.length)return;
+    let base=cart.reduce((s,i)=>s+i.price,0),disc=0;
+    if(appliedCoupon&&appliedCoupon.type==='percent')disc=Math.round(base*appliedCoupon.discount/100);
+    const final=base-disc;
+    let msg='🛍️ *NKRUMAH AVE ORDER* 🛍️\n━━━━━━━━━━━━━━━━\n\n';
+    cart.forEach((item,i)=>{msg+=`*${i+1}. ${item.brand.toUpperCase()}*\n   ${item.name}\n   🎨 ${item.color||'-'} | 📏 ${item.size||'-'}\n   💵 GHS ${item.price}\n\n`;});
+    msg+='━━━━━━━━━━━━━━━━\n';
+    if(disc>0)msg+=`🏷️ Coupon (${appliedCoupon.code}): -GHS ${disc.toLocaleString()}\n`;
+    msg+=`💰 *TOTAL: GHS ${final.toLocaleString()}*\n━━━━━━━━━━━━━━━━\n✅ Please confirm. Thank you! 🙏`;
+    const orders=loadOrders();
+    orders.push({id:Date.now(),date:new Date().toLocaleString(),items:[...cart],total:final,method,status:0});
     saveOrders(orders);
-    
-    cart = [];
-    saveCart();
-    updateCartUI();
-    toggleCart();
-    showNotification("✅ Order received! Check 'Orders'");
+    cart=[];appliedCoupon=null;saveCart();updateCartUI();
+    document.getElementById('cartModal').classList.remove('active');
+    document.getElementById('couponInput').value='';
+    document.getElementById('couponResult').style.display='none';
+    if(method==='whatsapp'){
+        const url='https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(msg);
+        window.location.href=url;
+    } else if(method==='mtn'){
+        showNotification('📱 Dial *500# for MTN MoMo. Ref: NK'+Date.now().toString().slice(-6),4000);
+    } else if(method==='vodafone'){
+        showNotification('📞 Dial *110# for Vodafone Cash. Ref: NK'+Date.now().toString().slice(-6),4000);
+    }
 }
+// WISHLIST
+function toggleWishlist(){const el=document.getElementById('wishlistModal');if(el.classList.contains('active')){el.classList.remove('active');}else{updateWishlistUI();el.classList.add('active');}}
+function updateWishlistUI(){
+    const items=document.getElementById('wishlistItems'),empty=document.getElementById('emptyWishlist');
+    if(!wishlist.length){items.innerHTML='';empty.style.display='block';document.getElementById('wishlistBadge').style.display='none';return;}
+    empty.style.display='none';document.getElementById('wishlistBadge').textContent=wishlist.length;document.getElementById('wishlistBadge').style.display='inline-flex';
+    items.innerHTML=wishlist.map(id=>{const p=window.products.find(p=>p.id===id);if(!p)return'';const f=p.discount?(p.price-Math.round(p.price*p.discount/100)):p.price;return`<div class="cart-item"><div><strong>${p.name}</strong><br><span style="color:#00ff00;">GHS ${f.toLocaleString()}</span></div><button class="remove-btn" onclick="quickWishlist('${p.id}');updateWishlistUI();">Remove</button></div>`;}).join('');
+}
+
+// DELIVERY
+function viewDelivery(){document.getElementById('deliveryGrid').innerHTML=DELIVERY_FEES.map(d=>`<div class="delivery-card"><div class="delivery-region">📍 ${d.region}</div><div class="delivery-fee">${d.fee}</div><div class="delivery-time">⏱ ${d.time}</div></div>`).join('');document.getElementById('deliveryModal').classList.add('active');}
+
+// FAQ
+function viewFAQ(){document.getElementById('faqContent').innerHTML=FAQS.map((f,i)=>`<div class="faq-item"><div class="faq-question" onclick="toggleFAQ(${i})"><span>${f.q}</span><span class="faq-arrow" id="faq-arrow-${i}">▼</span></div><div class="faq-answer" id="faq-ans-${i}">${f.a}</div></div>`).join('');document.getElementById('faqModal').classList.add('active');}
+function toggleFAQ(i){document.getElementById(`faq-ans-${i}`).classList.toggle('open');document.getElementById(`faq-arrow-${i}`).classList.toggle('open');}
+
+// RETURNS / TRACKING / REFERRAL
+function viewReturns(){document.getElementById('returnsModal').classList.add('active');}
+function viewTracking(){document.getElementById('trackingModal').classList.add('active');}
+function trackOrder(){
+    const phone=document.getElementById('trackingPhone').value.trim();if(!phone){showNotification('Enter your number');return;}
+    const orders=loadOrders();const result=document.getElementById('trackingResult');
+    if(!orders.length){result.innerHTML='<p style="color:#aaa;font-size:0.82em;text-align:center;">No orders found. WhatsApp us for help.</p>';return;}
+    const steps=['Order Placed','Confirmed','Dispatched','Delivered'];
+    result.innerHTML=orders.slice(-3).reverse().map(o=>`<div style="background:#0d0d0d;border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid #2a2a2a;"><p style="color:#00ff00;font-weight:bold;margin-bottom:10px;">GHS ${o.total.toLocaleString()} — ${o.date}</p><div class="tracking-steps">${steps.map((s,idx)=>`<div class="tracking-step"><div class="tracking-dot-wrap"><div class="tracking-dot ${(o.status||0)>idx?'done':''}"></div>${idx<steps.length-1?`<div class="tracking-line ${(o.status||0)>idx?'done':''}"></div>`:''}</div><div class="tracking-info"><div class="tracking-label" style="color:${(o.status||0)>idx?'#fff':'#444'}">${s}</div></div></div>`).join('')}</div></div>`).join('');
+}
+function viewReferral(){document.getElementById('referralCode').textContent=userReferralCode;document.getElementById('referralStats').innerHTML=`<p style="color:#00ff00;font-size:0.88em;margin-bottom:6px;">👥 Referrals: <strong>${referralData.referrals||0}</strong></p><p style="color:#00ff00;font-size:0.88em;">💰 Credit: <strong>GHS ${(referralData.earned||0).toLocaleString()}</strong></p>`;document.getElementById('referralModal').classList.add('active');}
+function copyReferralCode(){navigator.clipboard.writeText(userReferralCode);showNotification('📋 Copied!',1500);}
+
+// PRE-ORDER
+function openPreorder(){document.getElementById('preorderModal').classList.add('active');}
+function submitPreorder(){
+    const name=document.getElementById('poName').value.trim(),phone=document.getElementById('poPhone').value.trim(),cat=document.getElementById('poCategory').value,details=document.getElementById('poDetails').value.trim(),region=document.getElementById('poRegion').value;
+    if(!name||!phone||!cat){showNotification('Fill Name, Phone & Category');return;}
+    const msg=`🛒 *NKRUMAH AVE PRE-ORDER*\n━━━━━━━━━━━━━\n👤 ${name}\n📞 ${phone}\n📦 ${cat}\n📝 ${details||'Not specified'}\n📍 ${region||'Not specified'}\n━━━━━━━━━━━━━\nPlease confirm this pre-order!`;
+    document.getElementById('preorderModal').classList.remove('active');
+    ['poName','poPhone','poDetails'].forEach(id=>document.getElementById(id).value='');
+    window.location.href='https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(msg);
+    showNotification('Pre-order sent!',3000);
+}
+
+// NEWSLETTER
+function subscribeNewsletter(){const email=document.getElementById('newsletterEmail').value.trim();if(!email||!email.includes('@')){showNotification('Enter a valid email');return;}const subs=JSON.parse(localStorage.getItem('nkrumah_subs')||'[]');if(subs.includes(email)){showNotification('Already subscribed!');return;}subs.push(email);localStorage.setItem('nkrumah_subs',JSON.stringify(subs));document.getElementById('newsletterEmail').value='';showNotification('Subscribed!',3000);}
+
+// ADMIN
+let tapCount=0,tapTimer=null;
+function handleLogoTap(){tapCount++;clearTimeout(tapTimer);tapTimer=setTimeout(()=>tapCount=0,2000);if(tapCount>=5){tapCount=0;isAdmin?toggleAdminMode(false):(document.getElementById('passwordModal').classList.add('active'),setTimeout(()=>document.getElementById('passwordInput').focus(),100));}}
+function checkPassword(){if(document.getElementById('passwordInput').value===ADMIN_PW){closePasswordModal();toggleAdminMode(true);}else{document.getElementById('wrongMsg').style.display='block';document.getElementById('passwordInput').value='';}}
+function closePasswordModal(){document.getElementById('passwordModal').classList.remove('active');document.getElementById('passwordInput').value='';document.getElementById('wrongMsg').style.display='none';}
+function toggleAdminMode(on){isAdmin=on;document.getElementById('adminBanner').classList.toggle('visible',on);document.getElementById('mainContainer').classList.toggle('admin-mode-active',on);window.renderProducts();}
+
+// ORDERS
+function viewOrders(){if(!isAdmin)return;const orders=loadOrders();const c=document.getElementById('ordersContainer');c.innerHTML=!orders.length?'<div class="empty-message">No orders yet</div>':orders.slice().reverse().map(o=>`<div class="order-item"><div class="order-header"><span class="order-date">${o.date}</span><span class="order-total">GHS ${o.total.toLocaleString()}</span></div><div class="order-items-list">${o.items.map(i=>`${i.brand} — ${i.name} (${i.size||'-'}, ${i.color||'-'})`).join('<br>')}</div></div>`).join('');c.innerHTML+=`<button class="clear-orders-btn" onclick="if(confirm('Clear all?')){localStorage.removeItem('nkrumah_orders');viewOrders();}">🗑 Clear All</button>`;document.getElementById('ordersModal').classList.add('active');}
+
+// ADMIN PRODUCT ACTIONS
+function setProductType(type){document.getElementById('editType').value=type;document.getElementById('btnClothing').className='type-btn'+(type==='clothing'?' on':'');document.getElementById('btnShoes').className='type-btn'+(type==='shoes'?' on':'');updateSizeCheckboxes([]);}
+function updateSizeCheckboxes(sel=[]){const sizes=document.getElementById('editType').value==='shoes'?SHOE_SIZES:CLOTHING_SIZES;document.getElementById('sizesCheckboxes').innerHTML=sizes.map(s=>`<label class="sz-cb"><input type="checkbox" value="${s}" ${sel.includes(s)?'checked':''}> ${s}</label>`).join('');}
+function getSelectedSizes(){return Array.from(document.querySelectorAll('#sizesCheckboxes input:checked')).map(c=>c.value);}
+function setTag(tag){document.getElementById('editTag').value=tag;['tagNone','tagNew','tagBest'].forEach(id=>document.getElementById(id).classList.remove('on'));if(tag==='')document.getElementById('tagNone').classList.add('on');else if(tag==='new')document.getElementById('tagNew').classList.add('on');else if(tag==='bestseller')document.getElementById('tagBest').classList.add('on');}
+function openAddModal(){isAdding=true;editingId=null;pendingMedia=[];document.getElementById('editModalTitle').textContent='Add Product';['editName','editBrand','editDescription'].forEach(id=>document.getElementById(id).value='');document.getElementById('editColors').value='Black, White';['editPrice','editDiscount','editStock'].forEach(id=>document.getElementById(id).value='');document.getElementById('editCategory').value='tees';document.getElementById('mediaPreviewList').innerHTML='';document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType('clothing');setTag('');document.getElementById('editModal').classList.add('active');}
+function openEditModal(id){if(!isAdmin)return;isAdding=false;editingId=id;const p=window.products.find(p=>p.id===id);if(!p)return;pendingMedia=p.media?[...p.media]:[];document.getElementById('editModalTitle').textContent='Edit Product';document.getElementById('editName').value=p.name;document.getElementById('editBrand').value=p.brand;document.getElementById('editDescription').value=p.description||'';document.getElementById('editPrice').value=p.price;document.getElementById('editDiscount').value=p.discount||'';document.getElementById('editStock').value=p.stock||'';document.getElementById('editCategory').value=p.category;document.getElementById('editColors').value=(p.colors||[]).join(', ');document.getElementById('mediaPreviewList').innerHTML=(pendingMedia||[]).map(m=>`<div class="media-thumb-wrap">${m.type==='video'?`<div class="media-thumb-video">🎬</div>`:`<img class="media-thumb" src="${m.url}">`}<button class="media-rm" onclick="removeMedia(this,'${m.url}')">×</button></div>`).join('');document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType(p.type||'clothing');updateSizeCheckboxes(p.sizes||[]);setTag(p.tag||'');document.getElementById('editModal').classList.add('active');}
+function closeEditModal(){document.getElementById('editModal').classList.remove('active');}
+async function uploadToCloudinary(file){const fd=new FormData();fd.append('file',file);fd.append('upload_preset',UPLOAD_PRESET);const rt=file.type.startsWith('video')?'video':'image';const r=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${rt}/upload`,{method:'POST',body:fd});if(!r.ok)throw new Error('Upload failed');const d=await r.json();return{url:d.secure_url,type:rt,publicId:d.public_id};}
+async function handleMediaSelect(input){const files=Array.from(input.files).slice(0,6);if(!files.length)return;const prog=document.getElementById('uploadProgress'),bar=document.getElementById('progressBar'),txt=document.getElementById('progressText'),btn=document.getElementById('saveBtn');prog.style.display='block';btn.disabled=true;uploadingCount=files.length;let done=0;for(const file of files){try{txt.textContent=`Uploading ${done+1} of ${files.length}...`;bar.style.width=`${(done/files.length)*100}%`;const r=await uploadToCloudinary(file);pendingMedia.push(r);const list=document.getElementById('mediaPreviewList');const wrap=document.createElement('div');wrap.className='media-thumb-wrap';wrap.innerHTML=r.type==='video'?`<div class="media-thumb-video">🎬</div><button class="media-rm" onclick="removeMedia(this,'${r.url}')">×</button>`:`<img class="media-thumb" src="${r.url}"><button class="media-rm" onclick="removeMedia(this,'${r.url}')">×</button>`;list.appendChild(wrap);done++;}catch(e){alert(`Failed: ${file.name}`);}}bar.style.width='100%';txt.textContent=`✅ ${done} uploaded`;setTimeout(()=>prog.style.display='none',2000);btn.disabled=false;uploadingCount=0;input.value='';}
+function removeMedia(btn,url){pendingMedia=pendingMedia.filter(m=>m.url!==url);btn.parentElement.remove();}
+async function saveProductEdit(){
+    if(uploadingCount>0){alert('Wait for uploads.');return;}
+    const name=document.getElementById('editName').value.trim(),brand=document.getElementById('editBrand').value.trim(),description=document.getElementById('editDescription').value.trim(),price=parseFloat(document.getElementById('editPrice').value)||0,discount=parseFloat(document.getElementById('editDiscount').value)||0,stock=parseInt(document.getElementById('editStock').value)||0,category=document.getElementById('editCategory').value,type=document.getElementById('editType').value,tag=document.getElementById('editTag').value,colors=document.getElementById('editColors').value.split(',').map(c=>c.trim()).filter(Boolean),sizes=getSelectedSizes();
+    if(!name||!brand||!price){alert('Fill Name, Brand and Price.');return;}
+    document.getElementById('saveBtn').disabled=true;document.getElementById('saveBtn').textContent='Saving...';
+    try{const data={name,brand,description,price,discount,stock,category,type,tag,sizes:sizes.length?sizes:(type==='shoes'?SHOE_SIZES:CLOTHING_SIZES),colors:colors.length?colors:['Black'],media:[...pendingMedia],available:true};if(isAdding){await window.fbSaveProduct(data);showNotification('Product added!');}else{await window.fbUpdateProduct(editingId,data);showNotification('Updated!');}closeEditModal();}catch(e){alert('Failed. Check internet.');console.error(e);}
+    document.getElementById('saveBtn').disabled=false;document.getElementById('saveBtn').textContent='SAVE PRODUCT';
+}
+async function toggleStock(id){const p=window.products.find(p=>p.id===id);if(p)await window.fbUpdateProduct(id,{available:!p.available});}
+async function deleteProduct(id){if(!confirm('Delete?'))return;await window.fbDeleteProduct(id);showNotification('Deleted');}
+
+// INIT
+loadCart();loadWishlist();initReferral();setProductType('clothing');setTag('');
 </script>
 
 </body>
