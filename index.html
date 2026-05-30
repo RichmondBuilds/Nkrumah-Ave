@@ -68,7 +68,18 @@
     .loading-spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #1a1a1a; border-top-color: #00ff00; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* TWO COLUMN GRID */
+    /* Fullscreen image viewer */
+    .img-viewer { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+    .img-viewer.active { display: flex; }
+    .img-viewer-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 1.4em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; }
+    .img-viewer-counter { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 0.82em; background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px; }
+    .img-viewer-slides { display: flex; width: 100%; height: 100%; transition: transform 0.3s ease; }
+    .img-viewer-slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .img-viewer-slide img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .img-viewer-slide video { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .img-viewer-prev, .img-viewer-next { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 1.4em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .img-viewer-prev { left: 12px; }
+    .img-viewer-next { right: 12px; }
     .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     /* WhatsApp bubble */
@@ -703,6 +714,14 @@
     </div>
 </div>
 
+<div class="img-viewer" id="imgViewer">
+    <button class="img-viewer-close" onclick="closeImgViewer()">✕</button>
+    <div class="img-viewer-counter" id="imgViewerCounter"></div>
+    <div class="img-viewer-slides" id="imgViewerSlides"></div>
+    <button class="img-viewer-prev" onclick="imgViewerNav(-1)">‹</button>
+    <button class="img-viewer-next" onclick="imgViewerNav(1)">›</button>
+</div>
+
 <div class="notification" id="notification"></div>
 
 <script src="https://js.paystack.co/v1/inline.js"></script>
@@ -812,7 +831,19 @@ function openProductDetail(id){
     const gallery=document.getElementById('detailGallery');
     gallery.ontouchstart=e=>{detailStartX=e.touches[0].clientX;};
     gallery.ontouchend=e=>{const diff=detailStartX-e.changedTouches[0].clientX;if(Math.abs(diff)>40){const media2=p.media&&p.media.length?p.media:[{}];detailSlideIdx=Math.max(0,Math.min(media2.length-1,detailSlideIdx+(diff>0?1:-1)));applyDetailSlide(media2.length);}};
-    gallery.onclick=e=>{const rect=gallery.getBoundingClientRect();const dir=e.clientX-rect.left>rect.width/2?1:-1;const media2=p.media&&p.media.length?p.media:[{}];detailSlideIdx=Math.max(0,Math.min(media2.length-1,detailSlideIdx+dir));applyDetailSlide(media2.length);};
+    gallery.onclick=e=>{
+        const rect=gallery.getBoundingClientRect();
+        const diff=e.clientX-rect.left - rect.width/2;
+        if(Math.abs(diff)<50){
+            // Center tap — open fullscreen
+            openImgViewer(media, detailSlideIdx);
+        } else {
+            // Side tap — swipe slide
+            const dir=diff>0?1:-1;
+            detailSlideIdx=Math.max(0,Math.min(media.length-1,detailSlideIdx+dir));
+            applyDetailSlide(media.length);
+        }
+    };
     // Switch to reviews tab
     switchTab('reviews');
 }
@@ -1085,6 +1116,30 @@ function renderNewIn(){
 
 // SOLD COUNT - generates a believable number based on product id
 function getSoldCount(id){const hash=id.split('').reduce((a,c)=>a+c.charCodeAt(0),0);return 5+(hash%47);}
+
+// FULLSCREEN IMAGE VIEWER
+let viewerMedia=[], viewerIdx=0, viewerStartX=0;
+function openImgViewer(media, startIdx){
+    viewerMedia=media; viewerIdx=startIdx||0;
+    const slides=document.getElementById('imgViewerSlides');
+    slides.innerHTML=media.map(m=>{
+        if(!m.url)return`<div class="img-viewer-slide"><span style="color:#555;font-size:3em;">📷</span></div>`;
+        if(m.type==='video')return`<div class="img-viewer-slide"><video src="${m.url}" controls autoplay playsinline style="max-width:100%;max-height:100%;"></video></div>`;
+        return`<div class="img-viewer-slide"><img src="${m.url}"></div>`;
+    }).join('');
+    applyViewerSlide();
+    document.getElementById('imgViewer').classList.add('active');
+    document.body.style.overflow='hidden';
+    // Touch swipe
+    slides.ontouchstart=e=>{viewerStartX=e.touches[0].clientX;};
+    slides.ontouchend=e=>{const diff=viewerStartX-e.changedTouches[0].clientX;if(Math.abs(diff)>40)imgViewerNav(diff>0?1:-1);};
+}
+function applyViewerSlide(){
+    document.getElementById('imgViewerSlides').style.transform=`translateX(-${viewerIdx*100}%)`;
+    document.getElementById('imgViewerCounter').textContent=`${viewerIdx+1} / ${viewerMedia.length}`;
+}
+function imgViewerNav(dir){viewerIdx=Math.max(0,Math.min(viewerMedia.length-1,viewerIdx+dir));applyViewerSlide();}
+function closeImgViewer(){document.getElementById('imgViewer').classList.remove('active');document.body.style.overflow='';}
 
 // DRAWER
 function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('active');document.body.style.overflow='hidden';}
