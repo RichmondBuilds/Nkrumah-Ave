@@ -20,12 +20,31 @@
     .admin-banner { display:none; background:#00ff00; color:#000; text-align:center; padding:6px; font-size:0.72em; font-weight:bold; letter-spacing:2px; }
     .admin-banner.visible { display:block; }
 
-    .top-nav { background:#111; display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; padding: 8px; border-bottom: 1px solid #1e1e1e; position: sticky; top: 50px; z-index: 99; }
-    .nav-btn { padding: 5px 10px; background: #1a1a1a; color: #aaa; border: 1px solid #2a2a2a; border-radius: 20px; font-size: 0.65em; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-    .nav-btn:hover { background: #00ff00; color: #000; }
+    .top-nav { display: none; }
+    .nav-btn { display: none; }
     .nav-badge { background: #ff4444; color: #fff; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6em; font-weight: bold; margin-left: 2px; }
 
-    .filter-bar { background: #0d0d0d; padding: 8px 10px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; border-bottom: 1px solid #1e1e1e; position: sticky; top: 90px; z-index: 98; }
+    /* Drawer */
+    .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; }
+    .drawer-overlay.active { display: block; }
+    .drawer { position: fixed; top: 0; right: -100%; width: 80%; max-width: 320px; height: 100vh; background: #0d0d0d; z-index: 501; transition: right 0.3s ease; overflow-y: auto; border-left: 1px solid #1e1e1e; }
+    .drawer.open { right: 0; }
+    .drawer-header { background: linear-gradient(90deg,#00ff00,#00cc00); padding: 20px 16px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .drawer-logo { font-size: 1em; font-weight: 900; color: #000; letter-spacing: 2px; }
+    .drawer-close { background: none; border: none; font-size: 1.5em; color: #000; cursor: pointer; }
+    .drawer-section { padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
+    .drawer-section-title { font-size: 0.6em; color: #444; text-transform: uppercase; letter-spacing: 2px; padding: 8px 16px 4px; }
+    .drawer-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; transition: background 0.15s; border: none; background: none; width: 100%; text-align: left; }
+    .drawer-item:hover, .drawer-item:active { background: #1a1a1a; }
+    .drawer-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1em; flex-shrink: 0; }
+    .drawer-text { flex: 1; }
+    .drawer-label { font-size: 0.88em; font-weight: bold; color: #fff; display: block; }
+    .drawer-sublabel { font-size: 0.68em; color: #555; display: block; margin-top: 1px; }
+    .drawer-arrow { color: #333; font-size: 0.8em; }
+    .drawer-badge { background: #ff4444; color: #fff; border-radius: 10px; padding: 2px 7px; font-size: 0.62em; font-weight: bold; }
+    .menu-btn { background: none; border: none; color: #000; font-size: 1.4em; cursor: pointer; padding: 0 4px; line-height: 1; }
+
+    .filter-bar { background: #0d0d0d; padding: 8px 10px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; border-bottom: 1px solid #1e1e1e; position: sticky; top: 52px; z-index: 98; }
     .filter-btn { padding: 5px 12px; background: #1a1a1a; color: #aaa; border: 1px solid #2a2a2a; border-radius: 20px; font-size: 0.68em; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
     .filter-btn.active, .filter-btn:hover { background: #00ff00; color: #000; border-color: #00ff00; }
     .price-filter { padding: 5px 10px; background: #1a1a1a; color: #00ff00; border: 1px solid #2a2a2a; border-radius: 20px; font-size: 0.68em; }
@@ -273,10 +292,87 @@
 <body>
 
 <div class="admin-banner" id="adminBanner">⚙️ ADMIN MODE ACTIVE</div>
-<header><h1 id="logoTap" onclick="handleLogoTap()">🟢 NKRUMAH AVE 🟢</h1></header>
+<header style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
+    <button class="menu-btn" onclick="toggleCart()" style="color:#000;">🛒<span id="cartCountHeader" style="font-size:0.6em;font-weight:bold;background:#000;color:#00ff00;border-radius:50%;padding:1px 5px;margin-left:2px;display:none;">0</span></button>
+    <h1 id="logoTap" onclick="handleLogoTap()" style="font-size:1.1em;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:#000;cursor:pointer;user-select:none;flex:1;text-align:center;">NKRUMAH AVE</h1>
+    <button class="menu-btn" onclick="openDrawer()">☰</button>
+</header>
+
+<!-- Drawer Overlay -->
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- Drawer -->
+
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <div class="drawer-logo">🟢 NKRUMAH AVE</div>
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+
+```
+<div class="drawer-section">
+    <div class="drawer-section-title">My Account</div>
+    <button class="drawer-item" onclick="closeDrawer();toggleWishlist()">
+        <div class="drawer-icon" style="background:#1a0a0a;">❤️</div>
+        <div class="drawer-text"><span class="drawer-label">Wishlist</span><span class="drawer-sublabel">Your saved items</span></div>
+        <span class="drawer-badge" id="wishlistBadge" style="display:none;">0</span>
+        <span class="drawer-arrow">›</span>
+    </button>
+    <button class="drawer-item" onclick="closeDrawer();viewTracking()">
+        <div class="drawer-icon" style="background:#0a0a1a;">📦</div>
+        <div class="drawer-text"><span class="drawer-label">Track Order</span><span class="drawer-sublabel">Check your order status</span></div>
+        <span class="drawer-arrow">›</span>
+    </button>
+    <button class="drawer-item" onclick="closeDrawer();viewReferral()">
+        <div class="drawer-icon" style="background:#0a1a0a;">🎁</div>
+        <div class="drawer-text"><span class="drawer-label">Refer & Earn</span><span class="drawer-sublabel">Share code, earn credit</span></div>
+        <span class="drawer-arrow">›</span>
+    </button>
+</div>
+
+<div class="drawer-section">
+    <div class="drawer-section-title">Shop</div>
+    <button class="drawer-item" onclick="closeDrawer();openPreorder()">
+        <div class="drawer-icon" style="background:#1a1000;">⚡</div>
+        <div class="drawer-text"><span class="drawer-label">Pre-Order</span><span class="drawer-sublabel">Reserve before launch</span></div>
+        <span class="drawer-arrow">›</span>
+    </button>
+    <button class="drawer-item" onclick="closeDrawer();viewDelivery()">
+        <div class="drawer-icon" style="background:#0a0a1a;">🚚</div>
+        <div class="drawer-text"><span class="drawer-label">Delivery Fees</span><span class="drawer-sublabel">All 16 Ghana regions</span></div>
+        <span class="drawer-arrow">›</span>
+    </button>
+    <button class="drawer-item" onclick="closeDrawer();viewReturns()">
+        <div class="drawer-icon" style="background:#1a0a0a;">↩️</div>
+        <div class="drawer-text"><span class="drawer-label">Returns & Exchanges</span><span class="drawer-sublabel">7-day exchange policy</span></div>
+        <span class="drawer-arrow">›</span>
+    </button>
+</div>
+
+<div class="drawer-section">
+    <div class="drawer-section-title">Support</div>
+    <button class="drawer-item" onclick="closeDrawer();viewFAQ()">
+        <div class="drawer-icon" style="background:#0a1a1a;">❓</div>
+        <div class="drawer-text"><span class="drawer-label">FAQ</span><span class="drawer-sublabel">Common questions answered</span></div>
+        <span class="drawer-arrow">›</span>
+    </button>
+    <button class="drawer-item" onclick="closeDrawer();window.location.href='https://wa.me/233207447665'">
+        <div class="drawer-icon" style="background:#0a1a0a;">💬</div>
+        <div class="drawer-text"><span class="drawer-label">WhatsApp Us</span><span class="drawer-sublabel">+233 207 447 665</span></div>
+        <span class="drawer-arrow">›</span>
+    </button>
+</div>
+
+<div style="padding:16px;text-align:center;">
+    <p style="font-size:0.65em;color:#333;">© 2025 Nkrumah Ave. Ghana-rooted streetwear.</p>
+</div>
+```
+
+</div>
 
 <div class="top-nav">
-    <button class="nav-btn" onclick="toggleWishlist()">❤️ Wishlist <span class="nav-badge" id="wishlistBadge" style="display:none;">0</span></button>
+    <button class="nav-btn" onclick="toggleWishlist()">❤️ Wishlist <span class="nav-badge" id="wishlistBadgeOld" style="display:none;">0</span></button>
     <button class="nav-btn" onclick="openPreorder()">⚡ Pre-Order</button>
     <button class="nav-btn" onclick="viewDelivery()">🚚 Delivery</button>
     <button class="nav-btn" onclick="viewReferral()">🎁 Refer</button>
@@ -900,6 +996,10 @@ function submitPreorder(){
 
 // NEWSLETTER
 function subscribeNewsletter(){const email=document.getElementById('newsletterEmail').value.trim();if(!email||!email.includes('@')){showNotification('Enter a valid email');return;}const subs=JSON.parse(localStorage.getItem('nkrumah_subs')||'[]');if(subs.includes(email)){showNotification('Already subscribed!');return;}subs.push(email);localStorage.setItem('nkrumah_subs',JSON.stringify(subs));document.getElementById('newsletterEmail').value='';showNotification('Subscribed!',3000);}
+
+// DRAWER
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('active');document.body.style.overflow='hidden';}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('active');document.body.style.overflow='';}
 
 // ADMIN
 let tapCount=0,tapTimer=null;
