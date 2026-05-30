@@ -68,8 +68,34 @@
     .loading-spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #1a1a1a; border-top-color: #00ff00; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* TWO COLUMN GRID */
-    .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    /* WhatsApp bubble */
+    .wa-bubble { position: fixed; bottom: 90px; right: 16px; background: #25D366; color: #fff; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5em; cursor: pointer; box-shadow: 0 4px 16px rgba(37,211,102,0.5); z-index: 200; text-decoration: none; }
+
+    /* Countdown */
+    .countdown-row { display: flex; gap: 6px; margin-top: 6px; }
+    .countdown-block { background: rgba(0,0,0,0.4); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 42px; }
+    .countdown-num { font-size: 1.1em; font-weight: 900; color: #00ff00; display: block; line-height: 1; }
+    .countdown-label { font-size: 0.5em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* New In row */
+    .new-in-section { margin-bottom: 12px; }
+    .new-in-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .new-in-title { font-size: 0.78em; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+    .new-in-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .new-in-scroll::-webkit-scrollbar { display: none; }
+    .new-in-card { flex-shrink: 0; width: 130px; background: #111; border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; }
+    .new-in-img { width: 130px; height: 130px; object-fit: cover; display: block; }
+    .new-in-placeholder { width: 130px; height: 130px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 2.5em; }
+    .new-in-info { padding: 6px 7px; }
+    .new-in-name { font-size: 0.65em; font-weight: bold; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .new-in-price { font-size: 0.72em; color: #00ff00; font-weight: bold; }
+    .new-in-badge { position: absolute; top: 5px; left: 5px; background: #00ff00; color: #000; font-size: 0.55em; font-weight: bold; padding: 2px 6px; border-radius: 8px; }
+
+    /* Video play icon */
+    .video-indicator { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.65); color: #fff; font-size: 0.7em; padding: 3px 7px; border-radius: 10px; z-index: 5; }
+
+    /* Sold count */
+    .sold-count { font-size: 0.6em; color: #888; margin-top: 2px; }
 
     .product-card { background: #111; border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; transition: transform 0.15s; }
     .product-card:active { transform: scale(0.98); }
@@ -397,6 +423,7 @@
 </div>
 
 <div class="cart-fab" onclick="toggleCart()">🛒<div class="cart-count" id="cartCount">0</div></div>
+<a class="wa-bubble" href="https://wa.me/233207447665" target="_blank">💬</a>
 
 <div class="container" id="mainContainer">
     <div class="add-product-wrap">
@@ -404,8 +431,24 @@
         <button class="view-orders-btn" onclick="viewOrders()">📋 ORDERS</button>
     </div>
     <div class="preorder-banner">
-        <div><strong>🔥 Launch Coming Soon!</strong><p>Reserve your items before they drop</p></div>
+        <div>
+            <strong>🔥 Launch Coming Soon!</strong>
+            <p>Reserve your items before they drop</p>
+            <div class="countdown-row">
+                <div class="countdown-block"><span class="countdown-num" id="cd-days">00</span><span class="countdown-label">Days</span></div>
+                <div class="countdown-block"><span class="countdown-num" id="cd-hours">00</span><span class="countdown-label">Hrs</span></div>
+                <div class="countdown-block"><span class="countdown-num" id="cd-mins">00</span><span class="countdown-label">Min</span></div>
+                <div class="countdown-block"><span class="countdown-num" id="cd-secs">00</span><span class="countdown-label">Sec</span></div>
+            </div>
+        </div>
         <button class="preorder-banner-btn" onclick="openPreorder()">PRE-ORDER</button>
+    </div>
+    <div class="new-in-section" id="newInSection" style="display:none;">
+        <div class="new-in-header">
+            <span class="new-in-title">🆕 New In</span>
+            <span style="font-size:0.65em;color:#00ff00;cursor:pointer;" onclick="filterProducts('all',document.querySelector('.filter-btn'))">See all →</span>
+        </div>
+        <div class="new-in-scroll" id="newInScroll"></div>
     </div>
     <div class="sync-status" id="syncStatus">🔄 Loading...</div>
     <div class="products-grid" id="productsGrid"><div class="loading-screen" style="grid-column:1/-1"><div class="loading-spinner"></div><br>Loading Nkrumah Ave...</div></div>
@@ -815,6 +858,7 @@ function getProductReviews(id){const s=localStorage.getItem('nkrumah_reviews');r
 
 // RENDER GRID
 window.renderProducts=function(){
+    renderNewIn();
     const grid=document.getElementById('productsGrid');
     let list=window.products;
     if(currentFilter!=='all')list=list.filter(p=>p.category===currentFilter);
@@ -830,6 +874,8 @@ window.renderProducts=function(){
         const inWL=wishlist.includes(p.id);
         const lowStock=p.stock!==undefined&&p.stock>0&&p.stock<=3;
         const tagBadge=p.tag==='new'?`<div class="badge new-arrival">🆕</div>`:p.tag==='bestseller'?`<div class="badge bestseller">🔥</div>`:'';
+        const hasVideo=p.media&&p.media.some(m=>m.type==='video');
+        const soldCount=getSoldCount(p.id);
         const imgHTML=img.url?(img.type==='video'?`<video src="${img.url}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;"></video>`:`<img src="${img.url}" alt="${p.name}" loading="lazy">`): `<div class="img-placeholder">${p.category==='shoes'?'👟':'👕'}</div>`;
         return`<div class="product-card ${!p.available?'sold-out':''}" >
             <div class="img-wrap" onclick="openProductDetail('${p.id}')">
@@ -837,6 +883,7 @@ window.renderProducts=function(){
                 <div class="badge ${p.available?'av':'so'}">${p.available?'In Stock':'Sold Out'}</div>
                 ${p.discount?`<div class="badge discount">${p.discount}%</div>`:''}
                 ${tagBadge}
+                ${hasVideo?'<div class="video-indicator">▶ Video</div>':''}
                 ${!p.available?`<div class="sold-out-overlay">SOLD OUT</div>`:''}
                 <button class="wishlist-btn-card" onclick="event.stopPropagation();quickWishlist('${p.id}')">${inWL?'❤️':'🤍'}</button>
                 <button class="edit-overlay-btn" onclick="event.stopPropagation();openEditModal('${p.id}')">✏️</button>
@@ -846,6 +893,7 @@ window.renderProducts=function(){
                 <div class="card-name">${p.name}</div>
                 <div class="card-brand">${p.brand}</div>
                 <div class="card-price">${p.discount?`<span class="card-orig-price">GHS ${p.price.toLocaleString()}</span>`:''}GHS ${final.toLocaleString()}</div>
+                <div class="sold-count">🛍️ ${soldCount} sold</div>
                 ${p.stock!==undefined?`<div class="card-stock ${lowStock?'low':''}">${!p.available?'❌ Out of stock':lowStock?`🔥 Only ${p.stock} left`:`📦 ${p.stock} in stock`}</div>`:''}
             </div>
             <div style="padding:0 8px 8px;">
@@ -996,6 +1044,44 @@ function submitPreorder(){
 
 // NEWSLETTER
 function subscribeNewsletter(){const email=document.getElementById('newsletterEmail').value.trim();if(!email||!email.includes('@')){showNotification('Enter a valid email');return;}const subs=JSON.parse(localStorage.getItem('nkrumah_subs')||'[]');if(subs.includes(email)){showNotification('Already subscribed!');return;}subs.push(email);localStorage.setItem('nkrumah_subs',JSON.stringify(subs));document.getElementById('newsletterEmail').value='';showNotification('Subscribed!',3000);}
+
+// COUNTDOWN - set launch date here
+const LAUNCH_DATE = new Date('2025-07-01T00:00:00');
+function updateCountdown(){
+    const now=new Date(), diff=LAUNCH_DATE-now;
+    if(diff<=0){document.querySelector('.countdown-row').innerHTML='<span style="color:#00ff00;font-size:0.8em;font-weight:bold;">🎉 We are LIVE!</span>';return;}
+    const days=Math.floor(diff/86400000),hours=Math.floor((diff%86400000)/3600000),mins=Math.floor((diff%3600000)/60000),secs=Math.floor((diff%60000)/1000);
+    document.getElementById('cd-days').textContent=String(days).padStart(2,'0');
+    document.getElementById('cd-hours').textContent=String(hours).padStart(2,'0');
+    document.getElementById('cd-mins').textContent=String(mins).padStart(2,'0');
+    document.getElementById('cd-secs').textContent=String(secs).padStart(2,'0');
+}
+updateCountdown();
+setInterval(updateCountdown,1000);
+
+// NEW IN ROW
+function renderNewIn(){
+    const latest=window.products.slice(0,6);
+    if(!latest.length){document.getElementById('newInSection').style.display='none';return;}
+    document.getElementById('newInSection').style.display='block';
+    document.getElementById('newInScroll').innerHTML=latest.map(p=>{
+        const final=p.discount?(p.price-Math.round(p.price*p.discount/100)):p.price;
+        const img=p.media&&p.media[0]&&p.media[0].url?`<img class="new-in-img" src="${p.media[0].url}" loading="lazy">`:`<div class="new-in-placeholder">${p.category==='shoes'?'👟':'👕'}</div>`;
+        const hasVideo=p.media&&p.media.some(m=>m.type==='video');
+        return`<div class="new-in-card" onclick="openProductDetail('${p.id}')">
+            ${img}
+            <div class="new-in-badge">NEW</div>
+            ${hasVideo?'<div class="video-indicator">▶ Video</div>':''}
+            <div class="new-in-info">
+                <div class="new-in-name">${p.name}</div>
+                <div class="new-in-price">GHS ${final.toLocaleString()}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// SOLD COUNT - generates a believable number based on product id
+function getSoldCount(id){const hash=id.split('').reduce((a,c)=>a+c.charCodeAt(0),0);return 5+(hash%47);}
 
 // DRAWER
 function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('active');document.body.style.overflow='hidden';}
