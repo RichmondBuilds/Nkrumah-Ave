@@ -747,7 +747,9 @@ onSnapshot(q, (snapshot) => {
 window.fbSaveProduct = async (d) => { d.createdAt = Date.now(); return await addDoc(productsCol, d); };
 window.fbUpdateProduct = async (id, d) => { await updateDoc(doc(db, 'products', id), d); };
 window.fbDeleteProduct = async (id) => { await deleteDoc(doc(db, 'products', id)); };
-window.fbSignInAdmin = async () => { try { await signInAnonymously(auth); } catch(e) { console.error('Auth error:', e); } };
+window.fbSignInAdmin = async () => { try { await signInAnonymously(auth); console.log('Admin signed in'); } catch(e) { console.error('Auth error:', e); } };
+// Auto sign in anonymously on load so reads work
+signInAnonymously(auth).catch(e => console.log('anon auth:', e));
 </script>
 
 <script>
