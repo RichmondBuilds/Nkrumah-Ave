@@ -1080,7 +1080,7 @@ function submitPreorder(){
 function subscribeNewsletter(){const email=document.getElementById('newsletterEmail').value.trim();if(!email||!email.includes('@')){showNotification('Enter a valid email');return;}const subs=JSON.parse(localStorage.getItem('nkrumah_subs')||'[]');if(subs.includes(email)){showNotification('Already subscribed!');return;}subs.push(email);localStorage.setItem('nkrumah_subs',JSON.stringify(subs));document.getElementById('newsletterEmail').value='';showNotification('Subscribed!',3000);}
 
 // COUNTDOWN - set launch date here
-const LAUNCH_DATE = new Date('2025-06-25T00:00:00');
+const LAUNCH_DATE = new Date('2025-06-25T00:00:00+00:00');
 function updateCountdown(){
     const now=new Date(), diff=LAUNCH_DATE-now;
     if(diff<=0){document.querySelector('.countdown-row').innerHTML='<span style="color:#00ff00;font-size:0.8em;font-weight:bold;">🎉 We are LIVE!</span>';return;}
