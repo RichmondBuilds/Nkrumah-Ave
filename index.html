@@ -729,9 +729,12 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
 const firebaseConfig = { apiKey: "AIzaSyDguZ17EQN2xLxlU7Eu7wPr3UhFQrsxEJo", authDomain: "nkrumah-ave.firebaseapp.com", projectId: "nkrumah-ave", storageBucket: "nkrumah-ave.firebasestorage.app", messagingSenderId: "872496555997", appId: "1:872496555997:web:16b860e718faeb72b0f834" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 const productsCol = collection(db, 'products');
 const q = query(productsCol, orderBy('createdAt', 'desc'));
 onSnapshot(q, (snapshot) => {
@@ -740,9 +743,11 @@ onSnapshot(q, (snapshot) => {
     setTimeout(() => { document.getElementById('syncStatus').textContent = ''; }, 3000);
     window.renderProducts();
 }, (error) => { document.getElementById('syncStatus').textContent = '❌ Connection error'; document.getElementById('syncStatus').className = 'sync-status error'; });
+
 window.fbSaveProduct = async (d) => { d.createdAt = Date.now(); return await addDoc(productsCol, d); };
 window.fbUpdateProduct = async (id, d) => { await updateDoc(doc(db, 'products', id), d); };
 window.fbDeleteProduct = async (id) => { await deleteDoc(doc(db, 'products', id)); };
+window.fbSignInAdmin = async () => { try { await signInAnonymously(auth); } catch(e) { console.error('Auth error:', e); } };
 </script>
 
 <script>
@@ -1150,7 +1155,7 @@ let tapCount=0,tapTimer=null;
 function handleLogoTap(){tapCount++;clearTimeout(tapTimer);tapTimer=setTimeout(()=>tapCount=0,2000);if(tapCount>=5){tapCount=0;isAdmin?toggleAdminMode(false):(document.getElementById('passwordModal').classList.add('active'),setTimeout(()=>document.getElementById('passwordInput').focus(),100));}}
 function checkPassword(){if(document.getElementById('passwordInput').value===ADMIN_PW){closePasswordModal();toggleAdminMode(true);}else{document.getElementById('wrongMsg').style.display='block';document.getElementById('passwordInput').value='';}}
 function closePasswordModal(){document.getElementById('passwordModal').classList.remove('active');document.getElementById('passwordInput').value='';document.getElementById('wrongMsg').style.display='none';}
-function toggleAdminMode(on){isAdmin=on;document.getElementById('adminBanner').classList.toggle('visible',on);document.getElementById('mainContainer').classList.toggle('admin-mode-active',on);window.renderProducts();}
+function toggleAdminMode(on){isAdmin=on;if(on)window.fbSignInAdmin();document.getElementById('adminBanner').classList.toggle('visible',on);document.getElementById('mainContainer').classList.toggle('admin-mode-active',on);window.renderProducts();}
 
 // ORDERS
 function viewOrders(){if(!isAdmin)return;const orders=loadOrders();const c=document.getElementById('ordersContainer');c.innerHTML=!orders.length?'<div class="empty-message">No orders yet</div>':orders.slice().reverse().map(o=>`<div class="order-item"><div class="order-header"><span class="order-date">${o.date}</span><span class="order-total">GHS ${o.total.toLocaleString()}</span></div><div class="order-items-list">${o.items.map(i=>`${i.brand} — ${i.name} (${i.size||'-'}, ${i.color||'-'})`).join('<br>')}</div></div>`).join('');c.innerHTML+=`<button class="clear-orders-btn" onclick="if(confirm('Clear all?')){localStorage.removeItem('nkrumah_orders');viewOrders();}">🗑 Clear All</button>`;document.getElementById('ordersModal').classList.add('active');}
