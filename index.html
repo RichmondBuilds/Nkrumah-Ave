@@ -80,6 +80,13 @@
     .img-viewer-prev, .img-viewer-next { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 1.4em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .img-viewer-prev { left: 12px; }
     .img-viewer-next { right: 12px; }
+    /* Store badge */
+    .store-badge { display: inline-flex; align-items: center; gap: 4px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 20px; padding: 3px 8px; font-size: 0.6em; color: #aaa; margin-bottom: 4px; }
+    .store-badge.alltime { border-color: #ffd700; color: #ffd700; }
+    .store-badge.nkrumah { border-color: #00ff00; color: #00ff00; }
+    .sold-by { font-size: 0.72em; color: #666; margin-bottom: 6px; }
+    .sold-by span { font-weight: bold; }
+
     .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     /* WhatsApp bubble */
@@ -429,6 +436,7 @@
     <button class="filter-btn" onclick="filterProducts('bags',this)">Bags</button>
     <button class="filter-btn" onclick="filterProducts('hoodies',this)">Hoodies</button>
     <button class="filter-btn" onclick="filterProducts('shoes',this)">Shoes</button>
+    <button class="filter-btn" onclick="filterByStore('Alltime Legits',this)" style="border-color:#ffd700;color:#ffd700;">🛍️ Alltime</button>
     <select class="price-filter" onchange="sortByPrice(this.value)">
         <option value="">Price</option>
         <option value="low">Low→High</option>
@@ -671,6 +679,12 @@
         <span class="close-btn" onclick="closeEditModal()">&times;</span>
         <div class="modal-header" id="editModalTitle">Add Product</div>
         <div class="form-group"><label>Type</label><div class="type-btns"><button type="button" id="btnClothing" class="type-btn on" onclick="setProductType('clothing')">👕 CLOTHING</button><button type="button" id="btnShoes" class="type-btn" onclick="setProductType('shoes')">👟 SHOES</button></div><input type="hidden" id="editType" value="clothing"></div>
+        <div class="form-group"><label>Store</label>
+            <select id="editStore">
+                <option value="Nkrumah Ave">🟢 Nkrumah Ave — Koforidua</option>
+                <option value="Alltime Legits">🛍️ Alltime Legits — Sunyani</option>
+            </select>
+        </div>
         <div class="form-group"><label>Name</label><input type="text" id="editName"></div>
         <div class="form-group"><label>Brand</label><input type="text" id="editBrand"></div>
         <div class="form-group"><label>Description</label><textarea id="editDescription" placeholder="Material, fit, style..."></textarea></div>
@@ -799,6 +813,7 @@ function openProductDetail(id){
     document.getElementById('detailStars').textContent=avg?`${'⭐'.repeat(Math.round(avg))} ${avg} (${reviews.length} reviews)`:'No reviews yet';
     const descEl=document.getElementById('detailDesc');
     if(p.description){descEl.textContent=p.description;descEl.style.display='block';}else{descEl.style.display='none';}
+    document.getElementById('detailBrand').innerHTML=`${p.brand} &nbsp;·&nbsp; <span style="color:${p.store==='Alltime Legits'?'#ffd700':'#00ff00'}">${p.store==='Alltime Legits'?'🛍️':'🟢'} ${p.store||'Nkrumah Ave'}</span>`;
     // Gallery
     const media=p.media&&p.media.length?p.media:[{url:null,type:'image'}];
     document.getElementById('detailSlides').innerHTML=media.map(m=>{
@@ -931,6 +946,7 @@ window.renderProducts=function(){
             </div>
             <div class="card-info" onclick="openProductDetail('${p.id}')">
                 ${avg?`<div class="card-stars">${'⭐'.repeat(Math.round(avg))} ${avg}</div>`:''}
+                <div class="store-badge ${p.store==='Alltime Legits'?'alltime':'nkrumah'}">${p.store==='Alltime Legits'?'🛍️':'🟢'} ${p.store||'Nkrumah Ave'}</div>
                 <div class="card-name">${p.name}</div>
                 <div class="card-brand">${p.brand}</div>
                 <div class="card-price">${p.discount?`<span class="card-orig-price">GHS ${p.price.toLocaleString()}</span>`:''}GHS ${final.toLocaleString()}</div>
@@ -958,6 +974,7 @@ function quickAddToCart(id){
     saveCart();updateCartUI();showNotification('✅ Added!');
 }
 
+function filterByStore(store,btn){currentFilter='all';searchQuery='';document.getElementById('searchInput').value='';document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');window.products=window.products;const grid=document.getElementById('productsGrid');let list=window.products.filter(p=>p.store===store);if(!list.length){grid.innerHTML=`<div class="empty-grid" style="grid-column:1/-1">No products from this store yet.</div>`;return;}renderFiltered(list);}
 function handleSearch(){searchQuery=document.getElementById('searchInput').value;currentFilter='all';document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));document.querySelector('.filter-btn').classList.add('active');window.renderProducts();}
 function filterProducts(cat,btn){currentFilter=cat;searchQuery='';document.getElementById('searchInput').value='';document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');window.renderProducts();}
 function sortByPrice(d){if(d==='low')window.products.sort((a,b)=>a.price-b.price);else if(d==='high')window.products.sort((a,b)=>b.price-a.price);window.renderProducts();}
@@ -1167,18 +1184,18 @@ function setProductType(type){document.getElementById('editType').value=type;doc
 function updateSizeCheckboxes(sel=[]){const sizes=document.getElementById('editType').value==='shoes'?SHOE_SIZES:CLOTHING_SIZES;document.getElementById('sizesCheckboxes').innerHTML=sizes.map(s=>`<label class="sz-cb"><input type="checkbox" value="${s}" ${sel.includes(s)?'checked':''}> ${s}</label>`).join('');}
 function getSelectedSizes(){return Array.from(document.querySelectorAll('#sizesCheckboxes input:checked')).map(c=>c.value);}
 function setTag(tag){document.getElementById('editTag').value=tag;['tagNone','tagNew','tagBest'].forEach(id=>document.getElementById(id).classList.remove('on'));if(tag==='')document.getElementById('tagNone').classList.add('on');else if(tag==='new')document.getElementById('tagNew').classList.add('on');else if(tag==='bestseller')document.getElementById('tagBest').classList.add('on');}
-function openAddModal(){isAdding=true;editingId=null;pendingMedia=[];document.getElementById('editModalTitle').textContent='Add Product';['editName','editBrand','editDescription'].forEach(id=>document.getElementById(id).value='');document.getElementById('editColors').value='Black, White';['editPrice','editDiscount','editStock'].forEach(id=>document.getElementById(id).value='');document.getElementById('editCategory').value='tees';document.getElementById('mediaPreviewList').innerHTML='';document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType('clothing');setTag('');document.getElementById('editModal').classList.add('active');}
-function openEditModal(id){if(!isAdmin)return;isAdding=false;editingId=id;const p=window.products.find(p=>p.id===id);if(!p)return;pendingMedia=p.media?[...p.media]:[];document.getElementById('editModalTitle').textContent='Edit Product';document.getElementById('editName').value=p.name;document.getElementById('editBrand').value=p.brand;document.getElementById('editDescription').value=p.description||'';document.getElementById('editPrice').value=p.price;document.getElementById('editDiscount').value=p.discount||'';document.getElementById('editStock').value=p.stock||'';document.getElementById('editCategory').value=p.category;document.getElementById('editColors').value=(p.colors||[]).join(', ');document.getElementById('mediaPreviewList').innerHTML=(pendingMedia||[]).map(m=>`<div class="media-thumb-wrap">${m.type==='video'?`<div class="media-thumb-video">🎬</div>`:`<img class="media-thumb" src="${m.url}">`}<button class="media-rm" onclick="removeMedia(this,'${m.url}')">×</button></div>`).join('');document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType(p.type||'clothing');updateSizeCheckboxes(p.sizes||[]);setTag(p.tag||'');document.getElementById('editModal').classList.add('active');}
+function openAddModal(){isAdding=true;editingId=null;pendingMedia=[];document.getElementById('editModalTitle').textContent='Add Product';['editName','editBrand','editDescription'].forEach(id=>document.getElementById(id).value='');document.getElementById('editColors').value='Black, White';['editPrice','editDiscount','editStock'].forEach(id=>document.getElementById(id).value='');document.getElementById('editCategory').value='tees';document.getElementById('editStore').value='Nkrumah Ave';document.getElementById('mediaPreviewList').innerHTML='';document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType('clothing');setTag('');document.getElementById('editModal').classList.add('active');}
+function openEditModal(id){if(!isAdmin)return;isAdding=false;editingId=id;const p=window.products.find(p=>p.id===id);if(!p)return;pendingMedia=p.media?[...p.media]:[];document.getElementById('editModalTitle').textContent='Edit Product';document.getElementById('editName').value=p.name;document.getElementById('editBrand').value=p.brand;document.getElementById('editDescription').value=p.description||'';document.getElementById('editPrice').value=p.price;document.getElementById('editDiscount').value=p.discount||'';document.getElementById('editStock').value=p.stock||'';document.getElementById('editCategory').value=p.category;document.getElementById('editStore').value=p.store||'Nkrumah Ave';document.getElementById('editColors').value=(p.colors||[]).join(', ');document.getElementById('mediaPreviewList').innerHTML=(pendingMedia||[]).map(m=>`<div class="media-thumb-wrap">${m.type==='video'?`<div class="media-thumb-video">🎬</div>`:`<img class="media-thumb" src="${m.url}">`}<button class="media-rm" onclick="removeMedia(this,'${m.url}')">×</button></div>`).join('');document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType(p.type||'clothing');updateSizeCheckboxes(p.sizes||[]);setTag(p.tag||'');document.getElementById('editModal').classList.add('active');}
 function closeEditModal(){document.getElementById('editModal').classList.remove('active');}
 async function uploadToCloudinary(file){const fd=new FormData();fd.append('file',file);fd.append('upload_preset',UPLOAD_PRESET);const rt=file.type.startsWith('video')?'video':'image';const r=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${rt}/upload`,{method:'POST',body:fd});if(!r.ok)throw new Error('Upload failed');const d=await r.json();return{url:d.secure_url,type:rt,publicId:d.public_id};}
 async function handleMediaSelect(input){const files=Array.from(input.files).slice(0,6);if(!files.length)return;const prog=document.getElementById('uploadProgress'),bar=document.getElementById('progressBar'),txt=document.getElementById('progressText'),btn=document.getElementById('saveBtn');prog.style.display='block';btn.disabled=true;uploadingCount=files.length;let done=0;for(const file of files){try{txt.textContent=`Uploading ${done+1} of ${files.length}...`;bar.style.width=`${(done/files.length)*100}%`;const r=await uploadToCloudinary(file);pendingMedia.push(r);const list=document.getElementById('mediaPreviewList');const wrap=document.createElement('div');wrap.className='media-thumb-wrap';wrap.innerHTML=r.type==='video'?`<div class="media-thumb-video">🎬</div><button class="media-rm" onclick="removeMedia(this,'${r.url}')">×</button>`:`<img class="media-thumb" src="${r.url}"><button class="media-rm" onclick="removeMedia(this,'${r.url}')">×</button>`;list.appendChild(wrap);done++;}catch(e){alert(`Failed: ${file.name}`);}}bar.style.width='100%';txt.textContent=`✅ ${done} uploaded`;setTimeout(()=>prog.style.display='none',2000);btn.disabled=false;uploadingCount=0;input.value='';}
 function removeMedia(btn,url){pendingMedia=pendingMedia.filter(m=>m.url!==url);btn.parentElement.remove();}
 async function saveProductEdit(){
     if(uploadingCount>0){alert('Wait for uploads.');return;}
-    const name=document.getElementById('editName').value.trim(),brand=document.getElementById('editBrand').value.trim(),description=document.getElementById('editDescription').value.trim(),price=parseFloat(document.getElementById('editPrice').value)||0,discount=parseFloat(document.getElementById('editDiscount').value)||0,stock=parseInt(document.getElementById('editStock').value)||0,category=document.getElementById('editCategory').value,type=document.getElementById('editType').value,tag=document.getElementById('editTag').value,colors=document.getElementById('editColors').value.split(',').map(c=>c.trim()).filter(Boolean),sizes=getSelectedSizes();
+    const name=document.getElementById('editName').value.trim(),brand=document.getElementById('editBrand').value.trim(),description=document.getElementById('editDescription').value.trim(),price=parseFloat(document.getElementById('editPrice').value)||0,discount=parseFloat(document.getElementById('editDiscount').value)||0,stock=parseInt(document.getElementById('editStock').value)||0,category=document.getElementById('editCategory').value,type=document.getElementById('editType').value,tag=document.getElementById('editTag').value,store=document.getElementById('editStore').value,colors=document.getElementById('editColors').value.split(',').map(c=>c.trim()).filter(Boolean),sizes=getSelectedSizes();
     if(!name||!brand||!price){alert('Fill Name, Brand and Price.');return;}
     document.getElementById('saveBtn').disabled=true;document.getElementById('saveBtn').textContent='Saving...';
-    try{const data={name,brand,description,price,discount,stock,category,type,tag,sizes:sizes.length?sizes:(type==='shoes'?SHOE_SIZES:CLOTHING_SIZES),colors:colors.length?colors:['Black'],media:[...pendingMedia],available:true};if(isAdding){await window.fbSaveProduct(data);showNotification('Product added!');}else{await window.fbUpdateProduct(editingId,data);showNotification('Updated!');}closeEditModal();}catch(e){alert('Failed. Check internet.');console.error(e);}
+    try{const data={name,brand,description,price,discount,stock,category,type,tag,store,sizes:sizes.length?sizes:(type==='shoes'?SHOE_SIZES:CLOTHING_SIZES),colors:colors.length?colors:['Black'],media:[...pendingMedia],available:true};if(isAdding){await window.fbSaveProduct(data);showNotification('Product added!');}else{await window.fbUpdateProduct(editingId,data);showNotification('Updated!');}closeEditModal();}catch(e){alert('Failed. Check internet.');console.error(e);}
     document.getElementById('saveBtn').disabled=false;document.getElementById('saveBtn').textContent='SAVE PRODUCT';
 }
 async function toggleStock(id){const p=window.products.find(p=>p.id===id);if(p)await window.fbUpdateProduct(id,{available:!p.available});}
