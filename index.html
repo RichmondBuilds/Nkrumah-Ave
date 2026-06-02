@@ -120,6 +120,45 @@
         .store-badge.alltime { border-color: #ffd700; color: #ffd700; }
         .store-badge.nkrumah { border-color: #00ff00; color: #00ff00; }
 
+        /* STORES */
+        .stores-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 1000; overflow-y: auto; }
+        .stores-modal.active { display: block; }
+        .stores-inner { max-width: 600px; margin: 0 auto; background: #111; min-height: 100vh; }
+        .stores-header { position: sticky; top: 0; background: #111; padding: 14px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #1e1e1e; z-index: 10; }
+        .stores-title { font-size: 1em; font-weight: bold; color: #fff; text-transform: uppercase; flex: 1; }
+        .stores-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; }
+        .store-card { background: #1a1a1a; border-radius: 12px; overflow: hidden; cursor: pointer; border: 1px solid #2a2a2a; transition: transform 0.15s; }
+        .store-card:active { transform: scale(0.97); }
+        .store-card-banner { width: 100%; height: 120px; object-fit: cover; background: #0f2a0f; display: flex; align-items: center; justify-content: center; font-size: 3em; }
+        .store-card-banner img { width: 100%; height: 120px; object-fit: cover; }
+        .store-card-info { padding: 10px; }
+        .store-card-name { font-size: 0.82em; font-weight: bold; color: #fff; margin-bottom: 3px; }
+        .store-card-location { font-size: 0.65em; color: #666; margin-bottom: 3px; }
+        .store-card-count { font-size: 0.65em; color: #00ff00; font-weight: bold; }
+        .add-store-btn { margin: 0 14px 14px; width: calc(100% - 28px); padding: 12px; background: linear-gradient(90deg,#00ff00,#00cc00); color: #000; border: none; border-radius: 10px; font-size: 0.9em; font-weight: bold; cursor: pointer; display: none; }
+        .admin-mode-active .add-store-btn { display: block; }
+
+        /* STORE PAGE */
+        .store-page { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 1001; overflow-y: auto; }
+        .store-page.active { display: block; }
+        .store-page-banner { width: 100%; height: 200px; object-fit: cover; background: #0f2a0f; display: flex; align-items: center; justify-content: center; font-size: 5em; position: relative; }
+        .store-page-banner img { width: 100%; height: 200px; object-fit: cover; }
+        .store-page-back { position: absolute; top: 14px; left: 14px; background: rgba(0,0,0,0.65); border: none; color: #fff; font-size: 1.3em; padding: 6px 12px; border-radius: 8px; cursor: pointer; z-index: 5; }
+        .store-page-info { padding: 14px; border-bottom: 1px solid #1e1e1e; }
+        .store-page-name { font-size: 1.3em; font-weight: 900; color: #fff; text-transform: uppercase; margin-bottom: 4px; }
+        .store-page-meta { font-size: 0.78em; color: #666; margin-bottom: 8px; }
+        .store-page-desc { font-size: 0.82em; color: #aaa; line-height: 1.6; }
+        .store-page-products { padding: 14px; }
+        .store-page-products-title { font-size: 0.75em; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+
+        /* Store badge on cards */
+        .store-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 20px; padding: 2px 7px; font-size: 0.58em; font-weight: bold; margin-bottom: 3px; background: #0f2a0f; color: #00ff00; border: 1px solid #00ff00; }
+        .store-badge.external { background: #1a1500; color: #ffd700; border-color: #ffd700; }
+
+        /* Store password modal */
+        .store-pw-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 1200; align-items: center; justify-content: center; }
+        .store-pw-modal.active { display: flex; }
+
         .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
         /* WhatsApp bubble */
@@ -373,7 +412,10 @@
 <header style="background:linear-gradient(90deg,#00ff00,#00cc00);display:flex;align-items:center;justify-content:space-between;padding:14px 16px;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,255,0,0.3);">
     <button onclick="toggleCart()" style="background:rgba(0,0,0,0.15);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:1.2em;color:#000;">🛒<span id="cartCountHeader" style="font-size:0.6em;font-weight:bold;background:#000;color:#00ff00;border-radius:50%;padding:1px 5px;margin-left:2px;display:none;">0</span></button>
     <h1 id="logoTap" onclick="handleLogoTap()" style="font-size:1.1em;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:#000;cursor:pointer;user-select:none;flex:1;text-align:center;">NKRUMAH AVE</h1>
-    <button onclick="openDrawer()" style="background:rgba(0,0,0,0.15);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:1.2em;color:#000;">☰</button>
+    <div style="display:flex;gap:6px;align-items:center;">
+        <button onclick="openStores()" style="background:rgba(0,0,0,0.15);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:1.2em;color:#000;">🏪</button>
+        <button onclick="openDrawer()" style="background:rgba(0,0,0,0.15);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:1.2em;color:#000;">☰</button>
+    </div>
 </header>
 
 <!-- Drawer Overlay -->
@@ -511,11 +553,11 @@
                 <div class="store-card-body">
                     <div class="store-avatar" style="border-color:#00ff00;">🟢</div>
                     <div class="store-info">
-                        <div class="store-name">Yeezy Collections</div>
+                        <div class="store-name">Nkrumah Ave</div>
                         <div class="store-location">📍 Koforidua, Eastern Region</div>
                         <div class="store-desc">Ghana-rooted streetwear. Premium tees, hoodies, shoes & more.</div>
                         <div class="store-stats">
-                            <div class="store-stat">Products: <span id="yeezy-count">0</span></div>
+                            <div class="store-stat">Products: <span id="nkrumah-count">0</span></div>
                             <div class="store-stat" style="color:#00ff00;">✅ Verified</div>
                         </div>
                     </div>
@@ -531,7 +573,7 @@
                     <div class="store-info">
                         <div class="store-name">Alltime Legits</div>
                         <div class="store-location">📍 Sunyani, Bono Region</div>
-                        <div class="store-desc">Street wear for the culture. We bring you premium hoodies, tees, sneakers, and accessories. Limited releases only. Based in Ghana.</div>
+                        <div class="store-desc">Streetwear designer brands. Always authentic, always fresh.</div>
                         <div class="store-stats">
                             <div class="store-stat">Products: <span id="alltime-count">0</span></div>
                             <div class="store-stat" style="color:#ffd700;">✅ Verified</div>
@@ -822,6 +864,54 @@
     <div class="img-viewer-slides" id="imgViewerSlides"></div>
     <button class="img-viewer-prev" onclick="imgViewerNav(-1)">‹</button>
     <button class="img-viewer-next" onclick="imgViewerNav(1)">›</button>
+</div>
+
+<!-- STORES MODAL -->
+<div class="stores-modal" id="storesModal">
+    <div class="stores-inner">
+        <div class="stores-header">
+            <button class="back-btn" onclick="closeStores()">←</button>
+            <div class="stores-title">🏪 Our Stores</div>
+        </div>
+        <button class="add-store-btn" id="addStoreBtn" onclick="openAddStore()">+ ADD STORE</button>
+        <div class="stores-grid" id="storesGrid"></div>
+    </div>
+</div>
+
+<!-- STORE PAGE -->
+<div class="store-page" id="storePage">
+    <div id="storePageBanner" class="store-page-banner">
+        <button class="store-page-back" onclick="closeStorePage()">← Back</button>
+    </div>
+    <div class="store-page-info">
+        <div class="store-page-name" id="storePageName"></div>
+        <div class="store-page-meta" id="storePageMeta"></div>
+        <div class="store-page-desc" id="storePageDesc"></div>
+    </div>
+    <div class="store-page-products">
+        <div class="store-page-products-title">Products</div>
+        <div class="products-grid" id="storePageGrid"></div>
+    </div>
+</div>
+
+<!-- ADD STORE MODAL -->
+<div class="overlay-modal" id="addStoreModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="document.getElementById('addStoreModal').classList.remove('active')">&times;</span>
+        <div class="modal-header" id="addStoreTitle">Add Store</div>
+        <div class="form-group"><label>Store Name</label><input type="text" id="storeNameInput" placeholder="e.g. Alltime Legits"></div>
+        <div class="form-group"><label>Location</label><input type="text" id="storeLocationInput" placeholder="e.g. Sunyani, Bono Region"></div>
+        <div class="form-group"><label>Category</label><input type="text" id="storeCategoryInput" placeholder="e.g. Streetwear & Designer Brands"></div>
+        <div class="form-group"><label>Description</label><textarea id="storeDescInput" placeholder="Tell customers about this store..."></textarea></div>
+        <div class="form-group">
+            <label>Store Banner Image</label>
+            <div class="upload-area" onclick="document.getElementById('storeBannerInput').click()"><p>📷 Tap to upload banner</p></div>
+            <input type="file" id="storeBannerInput" accept="image/*" style="display:none" onchange="handleStoreBanner(this)">
+            <div id="storeBannerPreview" style="margin-top:8px;"></div>
+        </div>
+        <input type="hidden" id="storeEditId" value="">
+        <button class="checkout-btn" onclick="saveStore()">SAVE STORE</button>
+    </div>
 </div>
 
 <div class="notification" id="notification"></div>
@@ -1364,6 +1454,122 @@ function attachCardEvents(){
     // cards are clickable via onclick already
 }
 
+// STORES
+let stores = [], pendingStoreBanner = null;
+
+function loadStores(){ const s=localStorage.getItem('nkrumah_stores'); stores=s?JSON.parse(s):[{id:'nkrumah-ave',name:'Nkrumah Ave',location:'Koforidua, Eastern Region',category:'Streetwear',description:'Ghana-rooted streetwear brand. Premium tees, hoodies, shorts, shoes and bags delivered across all 16 regions.',banner:null,isOwn:true},{id:'alltime-legits',name:'Alltime Legits',location:'Sunyani, Bono Region',category:'Designer Streetwear',description:'Alltime Legits is your go-to plug for designer streetwear brands in the Bono region. Authentic pieces, top brands, unmatched quality.',banner:null,isOwn:false}]; }
+function saveStores(){ localStorage.setItem('nkrumah_stores', JSON.stringify(stores)); }
+
+function openStores(){
+    loadStores();
+    renderStoresGrid();
+    document.getElementById('storesModal').classList.add('active');
+    document.getElementById('addStoreBtn').style.display = isAdmin ? 'block' : 'none';
+}
+function closeStores(){ document.getElementById('storesModal').classList.remove('active'); }
+
+function renderStoresGrid(){
+    const grid = document.getElementById('storesGrid');
+    grid.innerHTML = stores.map(s => {
+        const count = window.products.filter(p => p.store === s.name).length;
+        const bannerHTML = s.banner ? `<img src="${s.banner}">` : `<div class="store-card-banner" style="background:${s.isOwn?'#0f2a0f':'#1a1200'};height:120px;display:flex;align-items:center;justify-content:center;font-size:3em;">${s.isOwn?'🟢':'🛍️'}</div>`;
+        return `<div class="store-card" onclick="openStorePage('${s.id}')">
+            <div style="width:100%;height:120px;overflow:hidden;">${bannerHTML}</div>
+            <div class="store-card-info">
+                <div class="store-card-name">${s.name}</div>
+                <div class="store-card-location">📍 ${s.location}</div>
+                <div class="store-card-count">${count} products</div>
+                ${isAdmin?`<button onclick="event.stopPropagation();editStore('${s.id}')" style="margin-top:6px;background:#1a1a1a;color:#00ff00;border:1px solid #00ff00;border-radius:6px;padding:4px 10px;font-size:0.65em;cursor:pointer;">✏️ Edit</button>`:''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function openStorePage(storeId){
+    const s = stores.find(s => s.id === storeId);
+    if(!s) return;
+    const banner = document.getElementById('storePageBanner');
+    if(s.banner){ banner.innerHTML=`<button class="store-page-back" onclick="closeStorePage()">← Back</button><img src="${s.banner}" style="width:100%;height:200px;object-fit:cover;">`; }
+    else { banner.innerHTML=`<button class="store-page-back" onclick="closeStorePage()">← Back</button><span>${s.isOwn?'🟢':'🛍️'}</span>`; banner.style.background=s.isOwn?'#0f2a0f':'#1a1200'; }
+    document.getElementById('storePageName').textContent = s.name;
+    document.getElementById('storePageMeta').textContent = `📍 ${s.location} · ${s.category}`;
+    document.getElementById('storePageDesc').textContent = s.description;
+    // Render store products
+    const storeProducts = window.products.filter(p => p.store === s.name);
+    const grid = document.getElementById('storePageGrid');
+    if(!storeProducts.length){ grid.innerHTML=`<div class="empty-grid" style="grid-column:1/-1;color:#444;">No products yet</div>`; }
+    else {
+        grid.innerHTML = storeProducts.map(p => {
+            const final = p.discount?(p.price-Math.round(p.price*p.discount/100)):p.price;
+            const img = p.media&&p.media[0]&&p.media[0].url?`<img src="${p.media[0].url}" style="width:100%;height:100%;object-fit:cover;">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5em;">${p.category==='shoes'?'👟':'👕'}</div>`;
+            return `<div class="product-card" onclick="closeStorePage();openProductDetail('${p.id}')">
+                <div class="img-wrap">${img}<div class="badge ${p.available?'av':'so'}">${p.available?'In Stock':'Sold Out'}</div>${p.discount?`<div class="badge discount">${p.discount}%</div>`:''}</div>
+                <div class="card-info"><div class="card-name">${p.name}</div><div class="card-brand">${p.brand}</div><div class="card-price">GHS ${final.toLocaleString()}</div></div>
+                <div style="padding:0 8px 8px;"><button class="card-atc" onclick="event.stopPropagation();quickAddToCart('${p.id}')" ${!p.available?'disabled':''}>${p.available?'+ ADD TO CART':'SOLD OUT'}</button></div>
+            </div>`;
+        }).join('');
+    }
+    document.getElementById('storePage').classList.add('active');
+}
+function closeStorePage(){ document.getElementById('storePage').classList.remove('active'); }
+
+function openAddStore(){
+    document.getElementById('addStoreTitle').textContent = 'Add Store';
+    document.getElementById('storeNameInput').value = '';
+    document.getElementById('storeLocationInput').value = '';
+    document.getElementById('storeCategoryInput').value = '';
+    document.getElementById('storeDescInput').value = '';
+    document.getElementById('storeBannerPreview').innerHTML = '';
+    document.getElementById('storeEditId').value = '';
+    pendingStoreBanner = null;
+    document.getElementById('addStoreModal').classList.add('active');
+}
+
+function editStore(id){
+    const s = stores.find(s => s.id === id); if(!s) return;
+    document.getElementById('addStoreTitle').textContent = 'Edit Store';
+    document.getElementById('storeNameInput').value = s.name;
+    document.getElementById('storeLocationInput').value = s.location;
+    document.getElementById('storeCategoryInput').value = s.category;
+    document.getElementById('storeDescInput').value = s.description;
+    document.getElementById('storeEditId').value = id;
+    pendingStoreBanner = s.banner || null;
+    document.getElementById('storeBannerPreview').innerHTML = s.banner ? `<img src="${s.banner}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;">` : '';
+    document.getElementById('addStoreModal').classList.add('active');
+}
+
+async function handleStoreBanner(input){
+    const file = input.files[0]; if(!file) return;
+    showNotification('Uploading banner...');
+    try {
+        const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET);
+        const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,{method:'POST',body:fd});
+        const d = await r.json();
+        pendingStoreBanner = d.secure_url;
+        document.getElementById('storeBannerPreview').innerHTML = `<img src="${pendingStoreBanner}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-top:8px;">`;
+        showNotification('✅ Banner uploaded!');
+    } catch(e) { showNotification('❌ Upload failed'); }
+}
+
+function saveStore(){
+    const name = document.getElementById('storeNameInput').value.trim();
+    const location = document.getElementById('storeLocationInput').value.trim();
+    const category = document.getElementById('storeCategoryInput').value.trim();
+    const description = document.getElementById('storeDescInput').value.trim();
+    const editId = document.getElementById('storeEditId').value;
+    if(!name||!location){ showNotification('Fill Name and Location'); return; }
+    if(editId){
+        const idx = stores.findIndex(s => s.id === editId);
+        if(idx>-1){ stores[idx] = {...stores[idx], name, location, category, description, banner: pendingStoreBanner||stores[idx].banner}; }
+    } else {
+        stores.push({ id: 'store-'+Date.now(), name, location, category, description, banner: pendingStoreBanner, isOwn: false });
+    }
+    saveStores();
+    document.getElementById('addStoreModal').classList.remove('active');
+    renderStoresGrid();
+    showNotification('✅ Store saved!');
+}
+
 // DRAWER
 function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('active');document.body.style.overflow='hidden';}
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('active');document.body.style.overflow='';}
@@ -1383,7 +1589,22 @@ function setProductType(type){document.getElementById('editType').value=type;doc
 function updateSizeCheckboxes(sel=[]){const sizes=document.getElementById('editType').value==='shoes'?SHOE_SIZES:CLOTHING_SIZES;document.getElementById('sizesCheckboxes').innerHTML=sizes.map(s=>`<label class="sz-cb"><input type="checkbox" value="${s}" ${sel.includes(s)?'checked':''}> ${s}</label>`).join('');}
 function getSelectedSizes(){return Array.from(document.querySelectorAll('#sizesCheckboxes input:checked')).map(c=>c.value);}
 function setTag(tag){document.getElementById('editTag').value=tag;['tagNone','tagNew','tagBest'].forEach(id=>document.getElementById(id).classList.remove('on'));if(tag==='')document.getElementById('tagNone').classList.add('on');else if(tag==='new')document.getElementById('tagNew').classList.add('on');else if(tag==='bestseller')document.getElementById('tagBest').classList.add('on');}
-function openAddModal(){isAdding=true;editingId=null;pendingMedia=[];document.getElementById('editModalTitle').textContent='Add Product';['editName','editBrand','editDescription'].forEach(id=>document.getElementById(id).value='');document.getElementById('editColors').value='Black, White';['editPrice','editDiscount','editStock'].forEach(id=>document.getElementById(id).value='');document.getElementById('editCategory').value='tees';document.getElementById('editStore').value='Nkrumah Ave';document.getElementById('mediaPreviewList').innerHTML='';document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType('clothing');setTag('');document.getElementById('editModal').classList.add('active');}
+function openAddModal(){
+    isAdding=true;editingId=null;pendingMedia=[];
+    loadStores();
+    document.getElementById('editModalTitle').textContent='Add Product';
+    ['editName','editBrand','editDescription'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('editColors').value='Black, White';
+    ['editPrice','editDiscount','editStock'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('editCategory').value='tees';
+    document.getElementById('editStore').innerHTML=stores.map(s=>`<option value="${s.name}">${s.isOwn?'🟢':'🛍️'} ${s.name}</option>`).join('');
+    document.getElementById('editStore').value='Nkrumah Ave';
+    document.getElementById('mediaPreviewList').innerHTML='';
+    document.getElementById('uploadProgress').style.display='none';
+    document.getElementById('saveBtn').disabled=false;
+    setProductType('clothing');setTag('');
+    document.getElementById('editModal').classList.add('active');
+}
 function openEditModal(id){if(!isAdmin)return;isAdding=false;editingId=id;const p=window.products.find(p=>p.id===id);if(!p)return;pendingMedia=p.media?[...p.media]:[];document.getElementById('editModalTitle').textContent='Edit Product';document.getElementById('editName').value=p.name;document.getElementById('editBrand').value=p.brand;document.getElementById('editDescription').value=p.description||'';document.getElementById('editPrice').value=p.price;document.getElementById('editDiscount').value=p.discount||'';document.getElementById('editStock').value=p.stock||'';document.getElementById('editCategory').value=p.category;document.getElementById('editStore').value=p.store||'Nkrumah Ave';document.getElementById('editColors').value=(p.colors||[]).join(', ');document.getElementById('mediaPreviewList').innerHTML=(pendingMedia||[]).map(m=>`<div class="media-thumb-wrap">${m.type==='video'?`<div class="media-thumb-video">🎬</div>`:`<img class="media-thumb" src="${m.url}">`}<button class="media-rm" onclick="removeMedia(this,'${m.url}')">×</button></div>`).join('');document.getElementById('uploadProgress').style.display='none';document.getElementById('saveBtn').disabled=false;setProductType(p.type||'clothing');updateSizeCheckboxes(p.sizes||[]);setTag(p.tag||'');document.getElementById('editModal').classList.add('active');}
 function closeEditModal(){document.getElementById('editModal').classList.remove('active');}
 async function uploadToCloudinary(file){const fd=new FormData();fd.append('file',file);fd.append('upload_preset',UPLOAD_PRESET);const rt=file.type.startsWith('video')?'video':'image';const r=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${rt}/upload`,{method:'POST',body:fd});if(!r.ok)throw new Error('Upload failed');const d=await r.json();return{url:d.secure_url,type:rt,publicId:d.public_id};}
@@ -1402,6 +1623,9 @@ async function deleteProduct(id){if(!confirm('Delete?'))return;await window.fbDe
 
 // INIT
 loadCart();loadWishlist();initReferral();setProductType('clothing');setTag('');
+// Reset stores to get latest defaults
+localStorage.removeItem('nkrumah_stores');
+loadStores();
 </script>
 </body>
 </html>
