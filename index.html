@@ -544,46 +544,6 @@
             <div class="new-in-scroll" id="newInScroll"></div>
         </div>
 
-        <div class="stores-section">
-            <div class="stores-title">🏪 Our Stores</div>
-
-            <!-- Nkrumah Ave Store Card -->
-            <div class="store-card" onclick="openStore('nkrumah')">
-                <div class="store-card-banner-placeholder" style="background:linear-gradient(135deg,#0a0a0a,#0f2a0f);">🟢</div>
-                <div class="store-card-body">
-                    <div class="store-avatar" style="border-color:#00ff00;">🟢</div>
-                    <div class="store-info">
-                        <div class="store-name">Nkrumah Ave</div>
-                        <div class="store-location">📍 Koforidua, Eastern Region</div>
-                        <div class="store-desc">Ghana-rooted streetwear. Premium tees, hoodies, shoes & more.</div>
-                        <div class="store-stats">
-                            <div class="store-stat">Products: <span id="nkrumah-count">0</span></div>
-                            <div class="store-stat" style="color:#00ff00;">✅ Verified</div>
-                        </div>
-                    </div>
-                    <div class="store-arrow">›</div>
-                </div>
-            </div>
-
-            <!-- Alltime Legits Store Card -->
-            <div class="store-card" onclick="openStore('alltime')">
-                <div class="store-card-banner-placeholder" style="background:linear-gradient(135deg,#1a1000,#2a1a00);">🛍️</div>
-                <div class="store-card-body">
-                    <div class="store-avatar" style="border-color:#ffd700;">🛍️</div>
-                    <div class="store-info">
-                        <div class="store-name">Alltime Legits</div>
-                        <div class="store-location">📍 Sunyani, Bono Region</div>
-                        <div class="store-desc">Streetwear designer brands. Always authentic, always fresh.</div>
-                        <div class="store-stats">
-                            <div class="store-stat">Products: <span id="alltime-count">0</span></div>
-                            <div class="store-stat" style="color:#ffd700;">✅ Verified</div>
-                        </div>
-                    </div>
-                    <div class="store-arrow" style="color:#ffd700;">›</div>
-                </div>
-            </div>
-        </div>
-
         <div class="sync-status" id="syncStatus">🔄 Loading...</div>
         <div style="padding:0 0 6px;"><div style="font-size:0.7em;color:#555;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">🔥 All Products</div></div>
         <div class="products-grid" id="productsGrid"><div class="loading-screen" style="grid-column:1/-1"><div class="loading-spinner"></div><br>Loading Nkrumah Ave...</div></div>
@@ -708,8 +668,6 @@
             <div class="cart-total" id="totalAmount">Total: GHS 0</div>
             <button class="checkout-btn" onclick="checkout('whatsapp')">💬 WhatsApp Checkout</button>
             <button class="checkout-btn" style="background:linear-gradient(90deg,#0052cc,#0077ff);color:#fff;" onclick="paystackPay()">💳 Pay with Card / MoMo</button>
-            <button class="payment-btn" onclick="checkout('mtn')">📱 MTN Mobile Money</button>
-            <button class="payment-btn" onclick="checkout('vodafone')">📞 Vodafone Cash</button>
         </div>
     </div>
 </div>
@@ -880,9 +838,11 @@
 
 <!-- STORE PAGE -->
 <div class="store-page" id="storePage">
-    <div id="storePageBanner" class="store-page-banner">
-        <button class="store-page-back" onclick="closeStorePage()">← Back</button>
+    <div style="position:sticky;top:0;z-index:10;background:#111;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e1e1e;">
+        <button onclick="closeStorePage()" style="background:none;border:none;color:#00ff00;font-size:1.3em;cursor:pointer;">←</button>
+        <span style="font-size:0.9em;font-weight:bold;color:#fff;text-transform:uppercase;" id="storePageNavTitle"></span>
     </div>
+    <div id="storePageBanner" class="store-page-banner"></div>
     <div class="store-page-info">
         <div class="store-page-name" id="storePageName"></div>
         <div class="store-page-meta" id="storePageMeta"></div>
@@ -1185,7 +1145,7 @@ function paystackPay(){
     const email=prompt('Enter your email address for receipt:');
     if(!email||!email.includes('@')){showNotification('Valid email required');return;}
     const handler=PaystackPop.setup({
-        key:'pk_test_67804438cc54da37436a0eebc7dfad11182505da',
+        key:'pk_live_34c41d6ae52365c625e3470d80d85e55f67a61e0',
         email:email,
         amount:final*100,
         currency:'GHS',
@@ -1457,7 +1417,7 @@ function attachCardEvents(){
 // STORES
 let stores = [], pendingStoreBanner = null;
 
-function loadStores(){ const s=localStorage.getItem('nkrumah_stores'); stores=s?JSON.parse(s):[{id:'nkrumah-ave',name:'Nkrumah Ave',location:'Koforidua, Eastern Region',category:'Streetwear',description:'Ghana-rooted streetwear brand. Premium tees, hoodies, shorts, shoes and bags delivered across all 16 regions.',banner:null,isOwn:true},{id:'alltime-legits',name:'Alltime Legits',location:'Sunyani, Bono Region',category:'Designer Streetwear',description:'Alltime Legits is your go-to plug for designer streetwear brands in the Bono region. Authentic pieces, top brands, unmatched quality.',banner:null,isOwn:false}]; }
+function loadStores(){ const s=localStorage.getItem('nkrumah_stores'); stores=s?JSON.parse(s):[{id:'alltime-legits',name:'Alltime Legits',location:'Sunyani, Bono Region',category:'Designer Streetwear',description:'Alltime Legits is your go-to plug for designer streetwear brands in the Bono region. Authentic pieces, top brands, unmatched quality.',banner:null,isOwn:false}]; }
 function saveStores(){ localStorage.setItem('nkrumah_stores', JSON.stringify(stores)); }
 
 function openStores(){
@@ -1489,8 +1449,9 @@ function openStorePage(storeId){
     const s = stores.find(s => s.id === storeId);
     if(!s) return;
     const banner = document.getElementById('storePageBanner');
-    if(s.banner){ banner.innerHTML=`<button class="store-page-back" onclick="closeStorePage()">← Back</button><img src="${s.banner}" style="width:100%;height:200px;object-fit:cover;">`; }
-    else { banner.innerHTML=`<button class="store-page-back" onclick="closeStorePage()">← Back</button><span>${s.isOwn?'🟢':'🛍️'}</span>`; banner.style.background=s.isOwn?'#0f2a0f':'#1a1200'; }
+    document.getElementById('storePageNavTitle').textContent = s.name;
+    if(s.banner){ banner.innerHTML=`<img src="${s.banner}" style="width:100%;height:200px;object-fit:cover;">`; banner.style.background=''; }
+    else { banner.innerHTML=`<span>${s.isOwn?'🟢':'🛍️'}</span>`; banner.style.background=s.isOwn?'#0f2a0f':'#1a1200'; }
     document.getElementById('storePageName').textContent = s.name;
     document.getElementById('storePageMeta').textContent = `📍 ${s.location} · ${s.category}`;
     document.getElementById('storePageDesc').textContent = s.description;
