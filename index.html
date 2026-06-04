@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%2300ff00'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='black' font-weight='bold' font-family='Arial'>N</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Arial', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+        body { font-family: 'Arial', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; overflow-x: hidden; }
 
         header { background: linear-gradient(90deg, #00ff00, #00cc00, #00ff44); padding: 14px 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,255,0,0.3); }
         header h1 { font-size: 1.6em; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; color: #000; cursor: pointer; user-select: none; }
@@ -48,7 +48,7 @@
         .price-filter { padding: 5px 10px; background: #1a1a1a; color: #00ff00; border: 1px solid #2a2a2a; border-radius: 20px; font-size: 0.68em; }
         .search-input { padding: 5px 12px; background: #1a1a1a; color: #00ff00; border: 1px solid #2a2a2a; border-radius: 20px; font-size: 0.68em; flex: 0 1 130px; }
 
-        .cart-fab { position: fixed; bottom: 24px; right: 16px; background: #00ff00; color: #000; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3em; cursor: pointer; box-shadow: 0 4px 16px rgba(0,255,0,0.5); z-index: 200; }
+        .cart-fab { position: fixed; bottom: 24px; right: 16px; background: #00ff00; color: #000; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3em; cursor: grab; box-shadow: 0 4px 16px rgba(0,255,0,0.5); z-index: 200; touch-action: none; user-select: none; }
         .cart-count { position: absolute; top: -4px; right: -4px; background: #000; color: #00ff00; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.68em; border: 2px solid #00ff00; }
 
         .container { max-width: 600px; margin: 0 auto; padding: 10px 8px 80px; }
@@ -162,7 +162,7 @@
         .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
         /* WhatsApp bubble */
-        .wa-bubble { position: fixed; bottom: 90px; right: 16px; background: #25D366; color: #fff; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5em; cursor: pointer; box-shadow: 0 4px 16px rgba(37,211,102,0.5); z-index: 200; text-decoration: none; }
+        .wa-bubble { position: fixed; bottom: 90px; right: 16px; background: #25D366; color: #fff; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5em; cursor: grab; box-shadow: 0 4px 16px rgba(37,211,102,0.5); z-index: 200; text-decoration: none; touch-action: none; user-select: none; }
 
         /* Countdown */
         .countdown-row { display: flex; gap: 6px; margin-top: 6px; }
@@ -1587,6 +1587,50 @@ loadCart();loadWishlist();initReferral();setProductType('clothing');setTag('');
 // Reset stores to get latest defaults
 localStorage.removeItem('nkrumah_stores');
 loadStores();
+// Draggable floating buttons
+function makeDraggable(el, onTap) {
+    let startX, startY, startRight, startBottom, moved = false;
+    const onStart = (cx, cy) => {
+        moved = false;
+        const rect = el.getBoundingClientRect();
+        startX = cx; startY = cy;
+        startRight = window.innerWidth - rect.right;
+        startBottom = window.innerHeight - rect.bottom;
+        el.style.transition = 'none';
+        el.style.cursor = 'grabbing';
+    };
+    const onMove = (cx, cy) => {
+        const dx = cx - startX, dy = cy - startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+        if (!moved) return;
+        let newRight = startRight - dx;
+        let newBottom = startBottom - dy;
+        newRight = Math.max(8, Math.min(window.innerWidth - 60, newRight));
+        newBottom = Math.max(8, Math.min(window.innerHeight - 60, newBottom));
+        el.style.right = newRight + 'px';
+        el.style.bottom = newBottom + 'px';
+        el.style.left = 'auto';
+        el.style.top = 'auto';
+    };
+    const onEnd = () => {
+        el.style.cursor = 'grab';
+        if (!moved && onTap) onTap();
+    };
+    el.addEventListener('touchstart', e => { onStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    el.addEventListener('touchmove', e => { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+    el.addEventListener('touchend', onEnd);
+    el.addEventListener('mousedown', e => { onStart(e.clientX, e.clientY); document.addEventListener('mousemove', mm); document.addEventListener('mouseup', mu); });
+    const mm = e => onMove(e.clientX, e.clientY);
+    const mu = () => { onEnd(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+}
+
+// Init draggable after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    const wa = document.querySelector('.wa-bubble');
+    const cartFab = document.querySelector('.cart-fab');
+    if (wa) makeDraggable(wa, () => window.open('https://wa.me/233207447665', '_blank'));
+    if (cartFab) makeDraggable(cartFab, () => toggleCart());
+});
 </script>
 </body>
 </html>
