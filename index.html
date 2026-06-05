@@ -873,7 +873,17 @@
         <button class="checkout-btn" onclick="saveStore()">SAVE STORE</button>
     </div>
 </div>
+<div id="cartRecommendations"></div>
+<div class="sticky-checkout-bar" id="stickyBar">
+    <div>
+        <span id="stickyCount">0 items</span><br>
+        <strong id="stickyTotal">GHS 0</strong>
+    </div>
 
+    <button onclick="toggleCart()">
+        Checkout →
+    </button>
+</div>
 <div class="notification" id="notification"></div>
 
 <script src="https://js.paystack.co/v1/inline.js"></script>
@@ -1103,12 +1113,44 @@ window.renderProducts=function(){
 
 function quickWishlist(id){const idx=wishlist.indexOf(id);if(idx>-1){wishlist.splice(idx,1);showNotification('Removed');}else{wishlist.push(id);showNotification('❤️ Saved!');}saveWishlist();window.renderProducts();}
 function quickAddToCart(id){
-    const p=window.products.find(p=>p.id===id);if(!p||!p.available)return;
-    const final=p.discount?(p.price-Math.round(p.price*p.discount/100)):p.price;
-    const size=(p.sizes&&p.sizes[0])||'';
-    const color=(p.colors&&p.colors[0])||'';
-    cart.push({id:Date.now(),productId:p.id,name:p.name,brand:p.brand,price:final,size,color});
-    saveCart();updateCartUI();showNotification('✅ Added!');
+    const p = window.products.find(p => p.id === id);
+    if(!p || !p.available) return;
+
+    const final = p.discount
+        ? (p.price - Math.round(p.price * p.discount / 100))
+        : p.price;
+
+    const size = (p.sizes && p.sizes[0]) || '';
+    const color = (p.colors && p.colors[0]) || '';
+
+    // Auto merge duplicates
+    const existing = cart.find(item =>
+        item.productId === p.id &&
+        item.size === size &&
+        item.color === color
+    );
+
+    if(existing){
+        existing.qty = (existing.qty || 1) + 1;
+    }else{
+        cart.push({
+            id: Date.now(),
+            productId: p.id,
+            name: p.name,
+            brand: p.brand,
+            price: final,
+            size,
+            color,
+            qty: 1,
+            saved:false
+        });
+    }
+
+    saveCart();
+    updateCartUI();
+
+    showCartToast('add', p, final);
+    flyToCart(event, p);
 }
 
 function filterByStore(store,btn){currentFilter='all';searchQuery='';document.getElementById('searchInput').value='';document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');window.products=window.products;const grid=document.getElementById('productsGrid');let list=window.products.filter(p=>p.store===store);if(!list.length){grid.innerHTML=`<div class="empty-grid" style="grid-column:1/-1">No products from this store yet.</div>`;return;}renderFiltered(list);}
@@ -1118,17 +1160,299 @@ function sortByPrice(d){if(d==='low')window.products.sort((a,b)=>a.price-b.price
 
 // CART
 function updateCartUI(){
-    document.getElementById('cartCount').textContent=cart.length;
-    const items=document.getElementById('cartItems'),empty=document.getElementById('emptyCartMsg'),summary=document.getElementById('cartSummary');
-    if(!cart.length){items.innerHTML='';empty.style.display='block';summary.style.display='none';return;}
-    empty.style.display='none';summary.style.display='block';
-    let base=cart.reduce((s,i)=>s+i.price,0),disc=0;
-    if(appliedCoupon&&appliedCoupon.type==='percent')disc=Math.round(base*appliedCoupon.discount/100);
+
+    const count = cart.reduce((s,i)=>s+(i.qty||1),0);
+
+    document.getElementById('cartCount').textContent = count;
+
+    const items=document.getElementById('cartItems');
+    const empty=document.getElementById('emptyCartMsg');
+    const summary=document.getElementById('cartSummary');
+
+    if(!cart.length){
+        items.innerHTML='';
+        empty.style.display='block';
+        summary.style.display='none';
+        updateStickyBar();
+        return;
+    }
+
+    empty.style.display='none';
+    summary.style.display='block';
+
+    let base = cart.reduce(
+        (s,i)=>s+(i.price*(i.qty||1)),0
+    );
+
+    let disc=0;
+
+    if(appliedCoupon && appliedCoupon.type==='percent'){
+        disc=Math.round(base*appliedCoupon.discount/100);
+    }
+
     const final=base-disc;
-    items.innerHTML=cart.map((item,i)=>`<div class="cart-item"><div><strong>${item.brand} — ${item.name}</strong><br>Size: ${item.size||'-'} | Color: ${item.color||'-'}<br><span style="color:#00ff00;">GHS ${item.price.toLocaleString()}</span></div><button class="remove-btn" onclick="removeFromCart(${i})">Remove</button></div>`).join('');
-    document.getElementById('totalAmount').innerHTML=disc>0?`<span style="text-decoration:line-through;opacity:0.5;font-size:0.85em;">GHS ${base.toLocaleString()}</span> → GHS ${final.toLocaleString()}`:`Total: GHS ${final.toLocaleString()}`;
+
+    items.innerHTML = cart.map((item,i)=>`
+
+    <div class="cart-item">
+
+        <div class="cart-item-top">
+
+            <div>
+                <strong>${item.brand} — ${item.name}</strong><br>
+
+                <small>
+                Size: ${item.size||'-'}
+                |
+                Color: ${item.color||'-'}
+                </small>
+            </div>
+
+            <button
+            class="remove-btn"
+            onclick="removeFromCart(${i})">
+            ✕
+            </button>
+
+        </div>
+
+        <div class="cart-item-bottom">
+
+            <div class="qty-ctrl">
+
+                <button
+                class="qty-btn"
+                onclick="changeQty(${i},-1)">
+                −
+                </button>
+
+                <div class="qty-num">
+                ${item.qty||1}
+                </div>
+
+                <button
+                class="qty-btn"
+                onclick="changeQty(${i},1)">
+                +
+                </button>
+
+            </div>
+
+            <div class="cart-item-subtotal">
+                GHS ${(item.price*(item.qty||1)).toLocaleString()}
+            </div>
+
+        </div>
+
+        <button
+        onclick="saveForLater(${i})"
+        style="
+        margin-top:8px;
+        background:none;
+        border:none;
+        color:#00ff00;">
+        Save for later
+        </button>
+
+    </div>
+
+    `).join('');
+
+    document.getElementById('totalAmount').innerHTML =
+        disc>0
+        ?
+        `<span style="text-decoration:line-through;opacity:.5">
+        GHS ${base.toLocaleString()}
+        </span>
+        → GHS ${final.toLocaleString()}`
+        :
+        `Total: GHS ${final.toLocaleString()}`;
+
+    updateShippingProgress(final);
+
+    updateStickyBar();
+
+    renderCartRecommendations();
+function removeFromCart(i){
+
+    const item = cart[i];
+
+    cart.splice(i,1);
+
+    saveCart();
+
+    updateCartUI();
+
+    showCartToast(
+        'remove',
+        {name:item.name},
+        0
+    );
 }
-function removeFromCart(i){cart.splice(i,1);saveCart();updateCartUI();}
+function changeQty(i,delta){
+
+    if(!cart[i]) return;
+
+    cart[i].qty = Math.max(
+        1,
+        (cart[i].qty||1)+delta
+    );
+
+    saveCart();
+
+    updateCartUI();
+}
+function saveForLater(i){
+
+    if(!cart[i]) return;
+
+    cart[i].saved=true;
+
+    localStorage.setItem(
+        'saved_items',
+        JSON.stringify(
+            JSON.parse(
+                localStorage.getItem('saved_items')||'[]'
+            ).concat(cart[i])
+        )
+    );
+
+    cart.splice(i,1);
+
+    saveCart();
+
+    updateCartUI();
+
+    showNotification('Saved for later');
+}
+function updateStickyBar(){
+
+    const bar=document.getElementById('stickyBar');
+
+    if(!bar) return;
+
+    if(!cart.length){
+        bar.classList.remove('visible');
+        return;
+    }
+
+    const total=cart.reduce(
+        (s,i)=>s+(i.price*(i.qty||1)),
+        0
+    );
+
+    const count=cart.reduce(
+        (s,i)=>s+(i.qty||1),
+        0
+    );
+
+    document.getElementById('stickyCount').textContent=
+        `${count} items`;
+
+    document.getElementById('stickyTotal').textContent=
+        `GHS ${total.toLocaleString()}`;
+
+    bar.classList.add('visible');
+}
+function renderCartRecommendations(){
+
+    const box =
+    document.getElementById('cartRecommendations');
+
+    if(!box) return;
+
+    const picks =
+    window.products
+    .filter(p=>p.available)
+    .slice(0,4);
+
+    box.innerHTML=picks.map(p=>`
+
+    <div class="mini-rec">
+
+        <img
+        src="${p.media?.[0]?.url||''}"
+        style="
+        width:60px;
+        height:60px;
+        object-fit:cover;
+        border-radius:8px;">
+
+        <div>${p.name}</div>
+
+        <button
+        onclick="quickAddToCart('${p.id}')">
+        Add
+        </button>
+
+    </div>
+
+    `).join('');
+}
+setInterval(()=>{
+
+    if(cart.length===0) return;
+
+    const modal =
+    document.getElementById('cartModal');
+
+    if(modal.classList.contains('active'))
+        return;
+
+    const fab =
+    document.querySelector('.cart-fab');
+
+    if(!fab) return;
+
+    fab.classList.add('bounce');
+
+    setTimeout(()=>{
+        fab.classList.remove('bounce');
+    },700);
+
+},30000);
+function flyToCart(ev, product){
+
+    const fab =
+    document.querySelector('.cart-fab');
+
+    if(!fab) return;
+
+    const flyer =
+    document.createElement('img');
+
+    flyer.src =
+    product.media?.[0]?.url || '';
+
+    flyer.style.cssText = `
+    position:fixed;
+    width:80px;
+    height:80px;
+    border-radius:12px;
+    object-fit:cover;
+    z-index:9999;
+    pointer-events:none;
+    left:${ev?.clientX || window.innerWidth/2}px;
+    top:${ev?.clientY || window.innerHeight/2}px;
+    transition:all .8s cubic-bezier(.2,.8,.2,1);
+    `;
+
+    document.body.appendChild(flyer);
+
+    const rect=fab.getBoundingClientRect();
+
+    setTimeout(()=>{
+        flyer.style.left=rect.left+'px';
+        flyer.style.top=rect.top+'px';
+        flyer.style.width='20px';
+        flyer.style.height='20px';
+        flyer.style.opacity='0';
+    },10);
+
+    setTimeout(()=>{
+        flyer.remove();
+    },900);
+}
 function toggleCart(){document.getElementById('cartModal').classList.toggle('active');}
 function applyCoupon(){
     const code=document.getElementById('couponInput').value.trim().toUpperCase();
