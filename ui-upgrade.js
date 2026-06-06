@@ -1,80 +1,89 @@
 /**
- * NKRUMAH AVE — UI UPGRADE PATCH v2
- * - Full-width search bar (fixed, no expand on focus)
- * - Swipeable category filter strip
- * - Sticky cart pill (Temu-style)
- * - Bottom nav bar
+ * NKRUMAH AVE — UI UPGRADE PATCH v3
+ * Bold search bar + clear bottom nav
  */
 (function() {
 'use strict';
 
 const CSS = `
-/* Hide original filter bar */
 #mainFilterBar { display: none !important; }
-
-/* Hide original cart FAB */
 .cart-fab { display: none !important; }
 
 /* ── SEARCH ROW ── */
 #_searchRow {
-  background: #0a0a0a;
-  padding: 8px 12px;
+  background: #111;
+  padding: 10px 12px 8px;
   position: sticky;
   top: 52px;
   z-index: 97;
   width: 100%;
   box-sizing: border-box;
+  border-bottom: 1px solid #1a1a1a;
 }
 #_searchWrap {
   display: flex;
   align-items: center;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 0 12px;
-  gap: 8px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  padding: 0 14px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
+  height: 46px;
 }
-#_searchIcon { font-size: 0.88em; color: #555; flex-shrink: 0; }
+#_searchIcon { font-size: 1em; color: #888; flex-shrink: 0; }
 #_searchField {
   flex: 1;
   background: none;
   border: none;
   outline: none;
-  color: #fff;
-  font-size: 0.84em;
-  padding: 11px 0;
+  color: #111;
+  font-size: 0.9em;
   font-family: Arial, sans-serif;
-  width: 100%;
   min-width: 0;
   -webkit-appearance: none;
 }
-#_searchField::placeholder { color: #444; }
+#_searchField::placeholder { color: #999; }
 #_searchClear {
-  background: none;
+  background: #ccc;
   border: none;
   color: #555;
-  font-size: 0.9em;
+  font-size: 0.75em;
   cursor: pointer;
-  padding: 0;
+  padding: 3px 7px;
+  border-radius: 50%;
   display: none;
   line-height: 1;
   flex-shrink: 0;
+  font-weight: bold;
 }
-#_searchClear.visible { display: block; }
+#_searchClear.visible { display: flex; align-items: center; justify-content: center; }
+#_searchBtn {
+  background: #00ff00;
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9em;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* ── CATEGORY STRIP ── */
 #_catStrip {
-  background: #0a0a0a;
-  padding: 0 12px 9px;
+  background: #111;
+  padding: 0 12px 10px;
   display: flex;
-  gap: 6px;
+  gap: 7px;
   overflow-x: auto;
   position: sticky;
-  top: 98px;
+  top: 106px;
   z-index: 96;
-  border-bottom: 1px solid #141414;
+  border-bottom: 1px solid #1a1a1a;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -82,27 +91,28 @@ const CSS = `
 
 ._cat {
   flex-shrink: 0;
-  padding: 6px 16px;
-  background: #141414;
-  color: #666;
-  border: 1px solid #222;
+  padding: 7px 18px;
+  background: #1e1e1e;
+  color: #777;
+  border: 1.5px solid #2a2a2a;
   border-radius: 20px;
-  font-size: 0.7em;
+  font-size: 0.72em;
   font-weight: 700;
   cursor: pointer;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   font-family: Arial, sans-serif;
   white-space: nowrap;
-  transition: all 0.15s;
   -webkit-tap-highlight-color: transparent;
   appearance: none;
   -webkit-appearance: none;
+  transition: all 0.15s;
 }
 ._cat.on {
   background: #00ff00;
   color: #000;
   border-color: #00ff00;
+  font-weight: 900;
 }
 
 /* ── STICKY CART PILL ── */
@@ -120,32 +130,29 @@ const CSS = `
   border-radius: 10px 0 0 10px;
   padding: 10px 8px 8px;
   cursor: pointer;
-  box-shadow: -2px 0 14px rgba(0,255,0,0.2);
-  min-width: 44px;
-  transition: opacity 0.2s;
-  -webkit-tap-highlight-color: transparent;
+  box-shadow: -3px 0 16px rgba(0,255,0,0.25);
+  min-width: 46px;
   opacity: 0;
   pointer-events: none;
+  transition: opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
-#_cartPill.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-#_cartPillIcon { font-size: 1.2em; line-height: 1; }
+#_cartPill.show { opacity: 1; pointer-events: auto; }
+#_cartPillIcon { font-size: 1.3em; line-height: 1; }
 #_cartPillCount {
   background: #000;
   color: #00ff00;
   border-radius: 8px;
-  padding: 1px 5px;
-  font-size: 0.58em;
+  padding: 1px 6px;
+  font-size: 0.6em;
   font-weight: 900;
   margin-top: 3px;
-  min-width: 16px;
+  min-width: 18px;
   text-align: center;
   font-family: Arial, sans-serif;
 }
 #_cartPillLabel {
-  font-size: 0.45em;
+  font-size: 0.46em;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -157,9 +164,9 @@ const CSS = `
 #_bottomNav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: 58px;
+  height: 62px;
   background: #0d0d0d;
-  border-top: 1px solid #1e1e1e;
+  border-top: 1px solid #222;
   display: flex;
   align-items: stretch;
   z-index: 300;
@@ -170,7 +177,7 @@ const CSS = `
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   cursor: pointer;
   border: none;
   background: none;
@@ -178,44 +185,62 @@ const CSS = `
   font-family: Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
   position: relative;
-  transition: color 0.15s;
+  transition: background 0.1s;
 }
-._navTab.on { color: #00ff00; }
-._navTab:active { background: #111; }
-._navIcon { font-size: 1.2em; line-height: 1; }
+._navTab:active { background: #161616; }
+
+/* Active tab — green glow on icon */
+._navTab.on ._navIcon { 
+  background: rgba(0,255,0,0.12);
+  border-radius: 10px;
+  padding: 4px 10px;
+  color: #00ff00;
+}
+._navTab.on ._navLabel { color: #00ff00; }
+
+._navIcon {
+  font-size: 1.3em;
+  line-height: 1;
+  padding: 4px 10px;
+  border-radius: 10px;
+  transition: all 0.15s;
+}
 ._navLabel {
   font-size: 0.5em;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
+  color: #444;
+  transition: color 0.15s;
 }
 ._navBadge {
   position: absolute;
-  top: 5px;
-  right: calc(50% - 20px);
+  top: 6px;
+  right: calc(50% - 22px);
   background: #ff4444;
   color: #fff;
   border-radius: 10px;
-  padding: 1px 5px;
+  padding: 2px 5px;
   font-size: 0.48em;
   font-weight: 900;
-  min-width: 14px;
+  min-width: 16px;
   text-align: center;
   display: none;
   font-family: Arial, sans-serif;
+  border: 1.5px solid #0d0d0d;
 }
 ._navBadge.on { display: block; }
 
-/* Adjust spacing for nav bar */
+/* spacing */
 .container { padding-bottom: 80px !important; }
-.wa-bubble { bottom: 68px !important; right: 14px !important; }
+.wa-bubble { bottom: 70px !important; right: 14px !important; }
 `;
 
 const style = document.createElement('style');
 style.textContent = CSS;
 document.head.appendChild(style);
 
-// ── BUILD SEARCH ROW ──────────────────────────────────────────────────────────
+// ── SEARCH ROW ────────────────────────────────────────────────────────────────
 const searchRow = document.createElement('div');
 searchRow.id = '_searchRow';
 searchRow.innerHTML = `
@@ -223,10 +248,11 @@ searchRow.innerHTML = `
     <span id="_searchIcon">🔍</span>
     <input id="_searchField" type="search" placeholder="Search products, brands..." autocomplete="off">
     <button id="_searchClear" type="button">✕</button>
+    <button id="_searchBtn" type="button">🔍</button>
   </div>
 `;
 
-// ── BUILD CATEGORY STRIP ──────────────────────────────────────────────────────
+// ── CATEGORY STRIP ────────────────────────────────────────────────────────────
 const cats = [
   {label:'All', val:'all'},
   {label:'Tees', val:'tees'},
@@ -242,7 +268,7 @@ catStrip.innerHTML = cats.map(c =>
   `<button class="_cat${c.val==='all'?' on':''}" data-val="${c.val}" type="button">${c.label}</button>`
 ).join('');
 
-// ── BUILD CART PILL ───────────────────────────────────────────────────────────
+// ── CART PILL ─────────────────────────────────────────────────────────────────
 const cartPill = document.createElement('div');
 cartPill.id = '_cartPill';
 cartPill.innerHTML = `
@@ -252,7 +278,7 @@ cartPill.innerHTML = `
 `;
 cartPill.onclick = () => { if(typeof toggleCart==='function') toggleCart(); };
 
-// ── BUILD BOTTOM NAV ──────────────────────────────────────────────────────────
+// ── BOTTOM NAV ────────────────────────────────────────────────────────────────
 const bottomNav = document.createElement('div');
 bottomNav.id = '_bottomNav';
 bottomNav.innerHTML = `
@@ -284,47 +310,44 @@ if (header) {
 document.body.appendChild(cartPill);
 document.body.appendChild(bottomNav);
 
-// ── NAV TAP HANDLERS ─────────────────────────────────────────────────────────
-function _setNavActive(id) {
+// ── NAV HANDLERS ──────────────────────────────────────────────────────────────
+function _setNav(id) {
   document.querySelectorAll('._navTab').forEach(t => t.classList.remove('on'));
   document.getElementById(id)?.classList.add('on');
 }
 
 document.getElementById('_navHome').onclick = function() {
-  _setNavActive('_navHome');
+  _setNav('_navHome');
   if(typeof closeStore==='function') closeStore();
   document.getElementById('cartModal')?.classList.remove('active');
   document.getElementById('storesModal')?.classList.remove('active');
   window.scrollTo({top:0, behavior:'smooth'});
 };
-
 document.getElementById('_navStores').onclick = function() {
-  _setNavActive('_navStores');
+  _setNav('_navStores');
   if(typeof openStores==='function') openStores();
 };
-
 document.getElementById('_navCart').onclick = function() {
   if(typeof toggleCart==='function') toggleCart();
 };
-
 document.getElementById('_navMore').onclick = function() {
-  _setNavActive('_navMore');
+  _setNav('_navMore');
   if(typeof openDrawer==='function') openDrawer();
 };
 
-// Reset home tab when cart/drawer closes
+// Sync nav with cart modal state
 const cartModal = document.getElementById('cartModal');
 if (cartModal) {
   new MutationObserver(() => {
-    if (!cartModal.classList.contains('active')) {
-      _setNavActive('_navHome');
+    if (cartModal.classList.contains('active')) {
+      _setNav('_navCart');
     } else {
-      _setNavActive('_navCart');
+      _setNav('_navHome');
     }
   }).observe(cartModal, {attributes:true, attributeFilter:['class']});
 }
 
-// ── SEARCH LOGIC ──────────────────────────────────────────────────────────────
+// ── SEARCH ────────────────────────────────────────────────────────────────────
 const field = document.getElementById('_searchField');
 const clear = document.getElementById('_searchClear');
 
@@ -346,7 +369,7 @@ clear.addEventListener('click', function() {
   if (typeof window.renderProducts === 'function') window.renderProducts();
 });
 
-// ── CATEGORY LOGIC ────────────────────────────────────────────────────────────
+// ── CATEGORIES ────────────────────────────────────────────────────────────────
 catStrip.addEventListener('click', function(e) {
   const btn = e.target.closest('._cat');
   if (!btn) return;
@@ -360,33 +383,27 @@ catStrip.addEventListener('click', function(e) {
   btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
 });
 
-// ── UPDATE BADGES ─────────────────────────────────────────────────────────────
-function _updateBadges() {
+// ── BADGES ────────────────────────────────────────────────────────────────────
+function _badges() {
   const cnt = (window.cart||[]).reduce((s,i) => s+(i.qty||1), 0);
-  // Cart pill
   const pill = document.getElementById('_cartPill');
   const pillCnt = document.getElementById('_cartPillCount');
   if (pill) pill.classList.toggle('show', cnt > 0);
   if (pillCnt) pillCnt.textContent = cnt;
-  // Nav badge
   const badge = document.getElementById('_navBadge');
   if (badge) { badge.textContent = cnt; badge.classList.toggle('on', cnt > 0); }
-  // Header badge
   const hdr = document.getElementById('cartCountHeader');
   if (hdr) { hdr.textContent = cnt; hdr.style.display = cnt ? 'inline-flex' : 'none'; }
-  // Old FAB count
   const old = document.getElementById('cartCount');
   if (old) old.textContent = cnt;
 }
 
-// Hook into updateCartUI
 const _prev = window.updateCartUI;
 window.updateCartUI = function() {
   if (typeof _prev === 'function') _prev();
-  _updateBadges();
+  _badges();
 };
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-_updateBadges();
-console.log('✅ UI upgrade v2 loaded');
+_badges();
+console.log('✅ UI upgrade v3 loaded');
 })();
