@@ -1,16 +1,16 @@
 /**
- * NKRUMAH AVE — CART UPGRADES v4
- * Clean rewrite — no override conflicts
+ * NKRUMAH AVE — CART UPGRADES v5
+ * KEY CHANGE: Does NOT override addToCartFromDetail or quickAddToCart
+ * Original index.html functions handle adding — we only enhance the display
  */
 (function() {
 'use strict';
 
-// ── STYLES ────────────────────────────────────────────────────────────────────
 const CSS = `
 @keyframes _cBounce {0%{transform:scale(1)}30%{transform:scale(1.35)}60%{transform:scale(.9)}100%{transform:scale(1)}}
 @keyframes _cShake {0%,100%{transform:translateX(0)}15%{transform:translateX(-6px) rotate(-4deg)}30%{transform:translateX(6px) rotate(4deg)}45%{transform:translateX(-4px)}60%{transform:translateX(4px)}75%{transform:translateX(-2px)}90%{transform:translateX(2px)}}
 .cart-fab-bounce { animation: _cBounce .5s ease !important; }
-.cart-fab-shake { animation: _cShake .9s ease !important; }
+.cart-fab-shake  { animation: _cShake .9s ease !important; }
 
 #_imgToast {
   position:fixed; top:70px; left:50%;
@@ -29,7 +29,7 @@ const CSS = `
 ._tn { flex:1; min-width:0; }
 ._tn b  { display:block; font-size:.78em; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 ._tn s  { display:block; font-size:.8em; color:#00ff00; font-weight:bold; text-decoration:none; }
-._tn sm { display:block; font-size:.62em; color:#666; }
+._tn small { display:block; font-size:.62em; color:#666; }
 ._tv { background:#00ff00; color:#000; border:none; border-radius:8px; padding:6px 9px; font-size:.62em; font-weight:bold; cursor:pointer; white-space:nowrap; flex-shrink:0; }
 
 .qty-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
@@ -48,7 +48,7 @@ const CSS = `
 ._cmeta { font-size:.63em; color:#555; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
 ._cprice { font-size:.9em; font-weight:bold; color:#00ff00; margin-top:4px; }
 ._crm { position:absolute; top:10px; right:10px; background:#1a1a1a; border:1px solid #2a2a2a; color:#666; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75em; cursor:pointer; transition:all .15s; }
-._crm:hover, ._crm:active { background:#2a0f0f; border-color:#ff4444; color:#ff4444; }
+._crm:active { background:#2a0f0f; border-color:#ff4444; color:#ff4444; }
 
 ._ship { background:#0d0d0d; border:1px solid #1e1e1e; border-radius:10px; padding:10px 12px; margin-bottom:12px; }
 ._shiplbl { font-size:.68em; color:#aaa; margin-bottom:6px; display:flex; justify-content:space-between; }
@@ -57,7 +57,7 @@ const CSS = `
 ._shipfill { height:100%; background:linear-gradient(90deg,#00ff00,#00cc44); border-radius:3px; transition:width .6s cubic-bezier(.34,1.56,.64,1); }
 ._shipdone { font-size:.68em; color:#00ff00; font-weight:bold; text-align:center; }
 
-#_stickyBar { position:fixed; bottom:0; left:0; right:0; background:linear-gradient(0deg,#0a0a0a 80%,transparent); padding:10px 14px 18px; z-index:150; display:none; pointer-events:none; gap:8px; align-items:center; box-sizing:border-box; }
+#_stickyBar { position:fixed; bottom:0; left:0; right:0; background:linear-gradient(0deg,#0a0a0a 80%,transparent); padding:10px 14px 18px; z-index:149; display:none; pointer-events:none; gap:8px; align-items:center; box-sizing:border-box; }
 #_stickyBar.on { display:flex; pointer-events:auto; }
 ._stp { background:#111; border:1px solid #00ff00; border-radius:10px; padding:9px 13px; flex-shrink:0; }
 ._stplbl { font-size:.52em; color:#666; text-transform:uppercase; letter-spacing:1px; }
@@ -90,7 +90,7 @@ const st = document.createElement('style');
 st.textContent = CSS;
 document.head.appendChild(st);
 
-// ── INJECT DOM ────────────────────────────────────────────────────────────────
+// ── DOM ───────────────────────────────────────────────────────────────────────
 const stickyBar = document.createElement('div');
 stickyBar.id = '_stickyBar';
 stickyBar.innerHTML = `<div class="_stp"><div class="_stplbl">Total</div><div class="_stpamt" id="_stpamt">GHS 0</div></div><button class="_stbtn" onclick="toggleCart()">🛒 Checkout</button>`;
@@ -103,58 +103,55 @@ document.body.appendChild(toast);
 const mc = document.querySelector('#cartModal .modal-content');
 if (mc) { const rd = document.createElement('div'); rd.id='_cartRecsContainer'; mc.appendChild(rd); }
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────────────────────────
 const FREE_SHIP = 200;
 let savedForLater = [];
 try { savedForLater = JSON.parse(localStorage.getItem('nkrumah_saved')||'[]'); } catch(e){}
 function _saveSFL() { localStorage.setItem('nkrumah_saved', JSON.stringify(savedForLater)); }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function _p(id)   { return (window.products||[]).find(p=>p.id===id); }
-function _img(id) { const p=_p(id); return p&&p.media&&p.media[0]&&p.media[0].url ? p.media[0].url : null; }
-function _shoe(id){ const p=_p(id); return p&&p.category==='shoes'; }
-function _price(p){ return p.discount ? p.price-Math.round(p.price*p.discount/100) : p.price; }
-function _fab()   { return document.querySelector('.cart-fab'); }
-function _bounce(){ const f=_fab(); if(!f)return; f.classList.add('cart-fab-bounce'); setTimeout(()=>f.classList.remove('cart-fab-bounce'),500); }
+function _getP(id)   { return (window.products||[]).find(p=>p.id===id); }
+function _getImg(id) { const p=_getP(id); return p&&p.media&&p.media[0]&&p.media[0].url?p.media[0].url:null; }
+function _final(p)   { return p.discount?p.price-Math.round(p.price*p.discount/100):p.price; }
+
+function _bounce() {
+  const f=document.querySelector('.cart-fab'); if(!f)return;
+  f.classList.add('cart-fab-bounce'); setTimeout(()=>f.classList.remove('cart-fab-bounce'),500);
+}
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 let _tt;
-function _toast(p, imgSrc) {
+function _showToast(p, imgSrc) {
   const t=document.getElementById('_imgToast'); if(!t)return;
-  const f = p?_price(p):0;
-  t.innerHTML=`<div class="_ti">${imgSrc?`<img src="${imgSrc}">`:(p&&p.category==='shoes'?'👟':'👕')}</div><div class="_tn"><b>${p?p.name:'Item'}</b><s>GHS ${f.toLocaleString()}</s><sm>✅ Added to cart</sm></div><button class="_tv" onclick="document.getElementById('_imgToast').className='out';toggleCart();">View →</button>`;
-  t.className='in'; clearTimeout(_tt); _tt=setTimeout(()=>t.className='out',3000);
+  const f=p?_final(p):0;
+  t.innerHTML=`<div class="_ti">${imgSrc?`<img src="${imgSrc}">`:(p&&p.category==='shoes'?'👟':'👕')}</div><div class="_tn"><b>${p?p.name:'Item'}</b><s>GHS ${f.toLocaleString()}</s><small>✅ Added to cart</small></div><button class="_tv" onclick="document.getElementById('_imgToast').className='out';toggleCart();">View →</button>`;
+  t.className='in'; clearTimeout(_tt);
+  _tt=setTimeout(()=>t.className='out',3000);
 }
 
 // ── FLY ANIMATION ─────────────────────────────────────────────────────────────
 function _fly(btn, productId) {
-  const p=_p(productId), imgSrc=_img(productId), fab=_fab();
+  const p=_getP(productId), imgSrc=_getImg(productId);
+  const fab=document.querySelector('.cart-fab');
   if(btn&&fab){
-    try {
-      const sr=btn.getBoundingClientRect(), dr=fab.getBoundingClientRect();
+    try{
+      const sr=btn.getBoundingClientRect(),dr=fab.getBoundingClientRect();
       const cl=document.createElement('div');
-      cl.style.cssText=`position:fixed;z-index:9999;pointer-events:none;overflow:hidden;border-radius:8px;box-shadow:0 4px 20px rgba(0,255,0,.4);transition:left .5s cubic-bezier(.25,.46,.45,.94),top .5s,width .45s ease,height .45s ease,opacity .35s ease,border-radius .35s ease;left:${sr.left}px;top:${sr.top}px;width:${sr.width}px;height:${sr.height}px`;
-      cl.innerHTML=imgSrc?`<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">` :`<div style="width:100%;height:100%;background:#0f2a0f;display:flex;align-items:center;justify-content:center;font-size:2em;">${_shoe(productId)?'👟':'👕'}</div>`;
+      cl.style.cssText=`position:fixed;z-index:9999;pointer-events:none;overflow:hidden;border-radius:8px;box-shadow:0 4px 20px rgba(0,255,0,.4);transition:left .5s cubic-bezier(.25,.46,.45,.94),top .5s,width .45s,height .45s,opacity .35s,border-radius .35s;left:${sr.left}px;top:${sr.top}px;width:${sr.width}px;height:${sr.height}px`;
+      cl.innerHTML=imgSrc?`<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">` :`<div style="width:100%;height:100%;background:#0f2a0f;display:flex;align-items:center;justify-content:center;font-size:2em;">${p&&p.category==='shoes'?'👟':'👕'}</div>`;
       document.body.appendChild(cl);
       requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        const cx=dr.left+dr.width/2-15, cy=dr.top+dr.height/2-15;
-        cl.style.left=cx+'px';cl.style.top=cy+'px';cl.style.width='30px';cl.style.height='30px';cl.style.opacity='0';cl.style.borderRadius='50%';
+        const cx=dr.left+dr.width/2-15,cy=dr.top+dr.height/2-15;
+        cl.style.left=cx+'px';cl.style.top=cy+'px';
+        cl.style.width='30px';cl.style.height='30px';
+        cl.style.opacity='0';cl.style.borderRadius='50%';
       }));
       setTimeout(()=>{cl.remove();_bounce();},550);
-    } catch(e){_bounce();}
+    }catch(e){_bounce();}
   } else { _bounce(); }
-  _toast(p,imgSrc);
+  _showToast(p, imgSrc);
 }
 
-// ── MERGE / ADD ───────────────────────────────────────────────────────────────
-function _merge(item) {
-  if(!window.cart) window.cart=[];
-  const ex=window.cart.find(i=>i.productId===item.productId&&i.size===item.size&&i.color===item.color);
-  if(ex){ex.qty=(ex.qty||1)+1;return;}
-  item.qty=1; window.cart.push(item);
-}
-
-// ── GLOBAL HELPERS (called from rendered HTML) ─────────────────────────────────
+// ── GLOBAL FUNCTIONS (called from rendered HTML) ──────────────────────────────
 window._updateQty = function(idx,delta){
   if(!window.cart||!window.cart[idx])return;
   window.cart[idx].qty=Math.max(1,(window.cart[idx].qty||1)+delta);
@@ -167,15 +164,22 @@ window._removeItem = function(idx){
 window._saveForLater = function(idx){
   if(!window.cart)return;
   savedForLater.push(window.cart.splice(idx,1)[0]); _saveSFL();
-  window.saveCart(); window.updateCartUI(); window.showNotification('💾 Saved for later');
+  window.saveCart(); window.updateCartUI();
+  window.showNotification('💾 Saved for later');
 };
 window._moveToCart = function(idx){
-  _merge(savedForLater.splice(idx,1)[0]); _saveSFL();
-  window.saveCart(); window.updateCartUI(); window.showNotification('✅ Moved to cart');
+  const item=savedForLater.splice(idx,1)[0]; _saveSFL();
+  // Use original cart push so no conflict
+  if(!window.cart)window.cart=[];
+  item.qty=1; window.cart.push(item);
+  window.saveCart(); window.updateCartUI();
+  window.showNotification('✅ Moved to cart');
 };
 window._recAdd = function(id,btn){
-  const p=_p(id); if(!p||!p.available)return;
-  _merge({id:Date.now(),productId:p.id,name:p.name,brand:p.brand,price:_price(p),size:(p.sizes&&p.sizes[0])||'',color:(p.colors&&p.colors[0])||''});
+  const p=_getP(id); if(!p||!p.available)return;
+  if(!window.cart)window.cart=[];
+  const f=_final(p);
+  window.cart.push({id:Date.now(),productId:p.id,name:p.name,brand:p.brand,price:f,size:(p.sizes&&p.sizes[0])||'',color:(p.colors&&p.colors[0])||'',qty:1});
   window.saveCart(); window.updateCartUI(); _fly(btn,id);
 };
 
@@ -204,20 +208,21 @@ function _recs(){
   const list=(window.products||[]).filter(p=>!ids.includes(p.id)&&p.available).slice(0,6);
   if(!list.length)return'';
   return'<div class="_recs"><div class="_recstitle">You might also like</div><div class="_recsrow">'+list.map(p=>{
-    const f=_price(p),img=p.media&&p.media[0]&&p.media[0].url?`<img src="${p.media[0].url}">`:(p.category==='shoes'?'👟':'👕');
+    const f=_final(p),img=p.media&&p.media[0]&&p.media[0].url?`<img src="${p.media[0].url}">`:(p.category==='shoes'?'👟':'👕');
     return`<div class="_reccard" onclick="toggleCart();openProductDetail('${p.id}')"><div class="_recimg">${img}</div><div class="_recinfo"><div class="_recname">${p.name}</div><div class="_recprice">GHS ${f.toLocaleString()}</div></div><button class="_recatc" onclick="event.stopPropagation();_recAdd('${p.id}',this)">+ Add</button></div>`;
   }).join('')+'</div></div>';
 }
 
-// ── OVERRIDE updateCartUI ─────────────────────────────────────────────────────
+// ── OVERRIDE updateCartUI ONLY ────────────────────────────────────────────────
+// We only override the display — NOT the add functions
+const _origUpdateCartUI = window.updateCartUI;
 window.updateCartUI = function(){
+
+  // Sync badge counts
   const cnt=(window.cart||[]).reduce((s,i)=>s+(i.qty||1),0);
-  ['cartCount','cartCountHeader'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el)return;
-    el.textContent=cnt;
-    if(id==='cartCountHeader') el.style.display=cnt?'inline-flex':'none';
-  });
+  const fc=document.getElementById('cartCount'); if(fc)fc.textContent=cnt;
+  const hc=document.getElementById('cartCountHeader');
+  if(hc){hc.textContent=cnt;hc.style.display=cnt?'inline-flex':'none';}
 
   const itemsEl=document.getElementById('cartItems');
   const emptyEl=document.getElementById('emptyCartMsg');
@@ -231,7 +236,7 @@ window.updateCartUI = function(){
     itemsEl.innerHTML='';
     if(emptyEl)emptyEl.style.display='block';
     if(summaryEl)summaryEl.style.display='none';
-    _sticky();return;
+    _sticky(); return;
   }
   if(emptyEl)emptyEl.style.display='none';
   if(summaryEl)summaryEl.style.display='block';
@@ -241,7 +246,7 @@ window.updateCartUI = function(){
 
   let html=hasCart?_shipBar():'';
   html+=(window.cart||[]).map((item,i)=>{
-    const imgSrc=_img(item.productId);
+    const imgSrc=_getImg(item.productId);
     const imgHTML=imgSrc?`<img src="${imgSrc}">`:(item.category==='shoes'?'👟':'👕');
     const qty=item.qty||1;
     return`<div class="cart-item">
@@ -266,7 +271,7 @@ window.updateCartUI = function(){
   if(hasSaved){
     html+=`<div class="_saved"><div class="_savedtitle">💾 Saved for later (${savedForLater.length})</div>`;
     html+=savedForLater.map((item,i)=>{
-      const imgSrc=_img(item.productId);
+      const imgSrc=_getImg(item.productId);
       return`<div class="_saveditem"><div class="_savedimg">${imgSrc?`<img src="${imgSrc}">`:'👕'}</div><div class="_savedname">${item.name}</div><button class="_m2c" onclick="_moveToCart(${i})">Move to cart</button></div>`;
     }).join('')+'</div>';
   }
@@ -283,35 +288,39 @@ window.updateCartUI = function(){
   _sticky();
 };
 
-// ── OVERRIDE quickAddToCart ───────────────────────────────────────────────────
-window.quickAddToCart = function(id){
-  const p=_p(id); if(!p||!p.available)return;
-  _merge({id:Date.now(),productId:p.id,name:p.name,brand:p.brand,price:_price(p),size:(p.sizes&&p.sizes[0])||'',color:(p.colors&&p.colors[0])||''});
-  window.saveCart(); window.updateCartUI();
-  _fly(event&&event.currentTarget?event.currentTarget:null, id);
-};
+// ── HOOK INTO ORIGINAL addToCartFromDetail FOR TOAST + FLY ───────────────────
+// We don't replace it — we just add visual feedback after it runs
+function _hookATC() {
+  const _orig = window.addToCartFromDetail;
+  if (!_orig || _orig._hooked) return;
+  window.addToCartFromDetail = function() {
+    _orig.apply(this, arguments);
+    // Add visual feedback
+    const id = window.currentDetailId;
+    if (id) _showToast(_getP(id), _getImg(id));
+    _bounce();
+  };
+  window.addToCartFromDetail._hooked = true;
+}
 
-// ── OVERRIDE addToCartFromDetail ─────────────────────────────────────────────
-// This is the KEY fix — direct simple override, no wrapping, no interception
-window.addToCartFromDetail = function(){
-  const id = window.currentDetailId;
-  if(!id){ console.log('No currentDetailId'); return; }
-  const p = _p(id);
-  if(!p){ console.log('Product not found:', id); return; }
-  if(!p.available){ window.showNotification('Item is sold out'); return; }
+// Hook immediately and after delays to ensure original is loaded
+_hookATC();
+setTimeout(_hookATC, 500);
+setTimeout(_hookATC, 1500);
 
-  const sizeEl  = document.querySelector('.size-opt.selected');
-  const colorEl = document.querySelector('.color-opt.selected');
-  const size  = sizeEl  ? sizeEl.textContent.trim()  : (p.sizes&&p.sizes[0])||'';
-  const color = colorEl ? colorEl.textContent.trim() : (p.colors&&p.colors[0])||'Black';
-
-  _merge({id:Date.now(), productId:p.id, name:p.name, brand:p.brand, price:_price(p), size, color});
-  window.saveCart();
-  window.updateCartUI();
-  _toast(p, _img(id));
-  _bounce();
-  window.showNotification('✅ Added to cart!');
-};
+// ── HOOK quickAddToCart FOR FLY ANIMATION ─────────────────────────────────────
+function _hookQuickAdd() {
+  const _orig = window.quickAddToCart;
+  if (!_orig || _orig._hooked) return;
+  window.quickAddToCart = function(id) {
+    _orig.apply(this, arguments);
+    _fly(event&&event.currentTarget?event.currentTarget:null, id);
+  };
+  window.quickAddToCart._hooked = true;
+}
+_hookQuickAdd();
+setTimeout(_hookQuickAdd, 500);
+setTimeout(_hookQuickAdd, 1500);
 
 // ── SHAKE REMINDER ────────────────────────────────────────────────────────────
 let _idleT;
@@ -319,7 +328,7 @@ function _resetIdle(){
   clearTimeout(_idleT);
   _idleT=setTimeout(()=>{
     if(window.cart&&window.cart.length>0){
-      const f=_fab();if(!f)return;
+      const f=document.querySelector('.cart-fab');if(!f)return;
       f.classList.add('cart-fab-shake');setTimeout(()=>f.classList.remove('cart-fab-shake'),1000);
     }
   },45000);
@@ -330,5 +339,5 @@ _resetIdle();
 // ── INIT ──────────────────────────────────────────────────────────────────────
 if(window.cart)window.cart.forEach(i=>{if(!i.qty)i.qty=1;});
 window.updateCartUI();
-console.log('✅ cart-upgrades v4 loaded — ATC fixed');
+console.log('✅ cart-upgrades v5 — no ATC override, original functions untouched');
 })();
