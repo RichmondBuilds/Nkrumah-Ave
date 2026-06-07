@@ -1,28 +1,27 @@
 /**
- * NKRUMAH AVE — UI UPGRADE PATCH v4
- * - Compact header
- * - Bold search bar
- * - Swipeable categories (no cutoff)
- * - Cart pill
- * - Bottom nav
- * - Fix add to cart on detail page
- * - Fix tap to open product from anywhere
+ * NKRUMAH AVE — UI UPGRADE PATCH v5
+ * - Bold search bar + swipeable categories
+ * - Restore original cart FAB (no bottom nav)
+ * - Fix add to cart on product detail page
+ * - Fix cart item text overflow
  */
 (function() {
 'use strict';
 
 const CSS = `
+/* Hide original filter bar only */
 #mainFilterBar { display: none !important; }
-.cart-fab { display: none !important; }
+
+/* Restore cart FAB */
+.cart-fab { display: flex !important; }
 
 /* ── COMPACT HEADER ── */
 header {
   padding: 8px 12px !important;
-  height: 48px !important;
   min-height: 48px !important;
 }
 header h1, #logoTap {
-  font-size: 0.9em !important;
+  font-size: 0.92em !important;
   letter-spacing: 2px !important;
 }
 
@@ -45,7 +44,7 @@ header h1, #logoTap {
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
-  height: 42px;
+  height: 44px;
 }
 #_searchIcon { font-size: 0.9em; color: #999; flex-shrink: 0; }
 #_searchField {
@@ -74,7 +73,6 @@ header h1, #logoTap {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  line-height: 1;
 }
 #_searchClear.visible { display: flex; }
 #_searchBtn {
@@ -130,123 +128,43 @@ header h1, #logoTap {
   border-color: #00ff00;
 }
 
-/* ── STICKY CART PILL ── */
-#_cartPill {
-  position: fixed;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  z-index: 201;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #00ff00;
-  color: #000;
-  border-radius: 10px 0 0 10px;
-  padding: 10px 8px 8px;
-  cursor: pointer;
-  box-shadow: -3px 0 14px rgba(0,255,0,0.2);
-  min-width: 46px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
+/* ── FIX CART ITEM TEXT OVERFLOW ── */
+.cart-item, ._cit { overflow: hidden !important; }
+._cbody {
+  min-width: 0 !important;
+  flex: 1 !important;
+  padding-right: 32px !important;
+  overflow: hidden !important;
 }
-#_cartPill.show { opacity: 1; pointer-events: auto; }
-#_cpIcon { font-size: 1.2em; line-height: 1; }
-#_cpCount {
-  background: #000;
-  color: #00ff00;
-  border-radius: 8px;
-  padding: 1px 6px;
-  font-size: 0.58em;
-  font-weight: 900;
-  margin-top: 3px;
-  min-width: 16px;
-  text-align: center;
-  font-family: Arial, sans-serif;
+._cname {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
 }
-#_cpLabel {
-  font-size: 0.44em;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 2px;
-  font-family: Arial, sans-serif;
+._cmeta {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
-/* ── BOTTOM NAV ── */
-#_bottomNav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: 58px;
-  background: #0d0d0d;
-  border-top: 1px solid #1e1e1e;
-  display: flex;
-  z-index: 300;
+/* Fix cart modal width */
+#cartModal .modal-content {
+  overflow-x: hidden !important;
+  width: 94% !important;
+  max-width: 540px !important;
+  box-sizing: border-box !important;
 }
-._navTab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: #3a3a3a;
-  font-family: Arial, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-  position: relative;
-  transition: background 0.1s;
-}
-._navTab:active { background: #141414; }
-._navIcon {
-  font-size: 1.25em;
-  line-height: 1;
-  padding: 3px 12px;
-  border-radius: 10px;
-  transition: all 0.15s;
-}
-._navLabel {
-  font-size: 0.48em;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #3a3a3a;
-  transition: color 0.15s;
-}
-._navTab.on ._navIcon {
-  background: rgba(0,255,0,0.13);
-  color: #00ff00;
-}
-._navTab.on ._navLabel { color: #00ff00; }
-._navBadge {
-  position: absolute;
-  top: 5px; right: calc(50% - 22px);
-  background: #ff3b3b;
-  color: #fff;
-  border-radius: 10px;
-  padding: 1px 5px;
-  font-size: 0.46em;
-  font-weight: 900;
-  min-width: 15px;
-  text-align: center;
-  display: none;
-  border: 1.5px solid #0d0d0d;
-  font-family: Arial, sans-serif;
-}
-._navBadge.on { display: block; }
 
-.container { padding-bottom: 76px !important; }
-.wa-bubble { bottom: 66px !important; right: 12px !important; }
+/* More space at bottom for FAB */
+.container { padding-bottom: 90px !important; }
 `;
 
 const style = document.createElement('style');
 style.textContent = CSS;
 document.head.appendChild(style);
 
-// ── DOM ───────────────────────────────────────────────────────────────────────
+// ── SEARCH ROW ────────────────────────────────────────────────────────────────
 const searchRow = document.createElement('div');
 searchRow.id = '_searchRow';
 searchRow.innerHTML = `<div id="_searchWrap">
@@ -256,6 +174,7 @@ searchRow.innerHTML = `<div id="_searchWrap">
   <button id="_searchBtn" type="button">🔍</button>
 </div>`;
 
+// ── CATEGORY STRIP ────────────────────────────────────────────────────────────
 const cats = ['All','Tees','Shorts','Hoodies','Shoes','Bags','Other'];
 const catStrip = document.createElement('div');
 catStrip.id = '_catStrip';
@@ -263,123 +182,96 @@ catStrip.innerHTML = cats.map((c,i) =>
   `<button class="_cat${i===0?' on':''}" data-val="${c.toLowerCase()}" type="button">${c}</button>`
 ).join('');
 
-const cartPill = document.createElement('div');
-cartPill.id = '_cartPill';
-cartPill.innerHTML = `<div id="_cpIcon">🛒</div><div id="_cpCount">0</div><div id="_cpLabel">Cart</div>`;
-cartPill.onclick = () => { if(typeof toggleCart==='function') toggleCart(); };
-
-const bottomNav = document.createElement('div');
-bottomNav.id = '_bottomNav';
-bottomNav.innerHTML = `
-  <button class="_navTab on" id="_nHome" type="button"><span class="_navIcon">🏠</span><span class="_navLabel">Home</span></button>
-  <button class="_navTab" id="_nStores" type="button"><span class="_navIcon">🏪</span><span class="_navLabel">Stores</span></button>
-  <button class="_navTab" id="_nCart" type="button"><span class="_navIcon">🛒</span><span class="_navLabel">Cart</span><span class="_navBadge" id="_nBadge">0</span></button>
-  <button class="_navTab" id="_nMore" type="button"><span class="_navIcon">☰</span><span class="_navLabel">More</span></button>
-`;
-
+// ── INJECT ────────────────────────────────────────────────────────────────────
 const header = document.querySelector('header');
-if (header) { header.after(searchRow); searchRow.after(catStrip); }
-document.body.appendChild(cartPill);
-document.body.appendChild(bottomNav);
-
-// ── NAV ───────────────────────────────────────────────────────────────────────
-function _setNav(id) {
-  document.querySelectorAll('._navTab').forEach(t => t.classList.remove('on'));
-  document.getElementById(id)?.classList.add('on');
-}
-document.getElementById('_nHome').onclick = () => {
-  _setNav('_nHome');
-  if(typeof closeStore==='function') closeStore();
-  document.getElementById('cartModal')?.classList.remove('active');
-  document.getElementById('storesModal')?.classList.remove('active');
-  window.scrollTo({top:0,behavior:'smooth'});
-};
-document.getElementById('_nStores').onclick = () => { _setNav('_nStores'); if(typeof openStores==='function') openStores(); };
-document.getElementById('_nCart').onclick = () => { if(typeof toggleCart==='function') toggleCart(); };
-document.getElementById('_nMore').onclick = () => { _setNav('_nMore'); if(typeof openDrawer==='function') openDrawer(); };
-
-const cartModal = document.getElementById('cartModal');
-if (cartModal) {
-  new MutationObserver(() => {
-    _setNav(cartModal.classList.contains('active') ? '_nCart' : '_nHome');
-  }).observe(cartModal, {attributes:true, attributeFilter:['class']});
+if (header) {
+  header.after(searchRow);
+  searchRow.after(catStrip);
 }
 
-// ── SEARCH ────────────────────────────────────────────────────────────────────
+// ── SEARCH LOGIC ──────────────────────────────────────────────────────────────
 const field = document.getElementById('_searchField');
 const clear = document.getElementById('_searchClear');
+
 field.addEventListener('input', function() {
   clear.classList.toggle('visible', this.value.trim().length > 0);
   window.searchQuery = this.value.trim();
   window.currentFilter = 'all';
-  document.querySelectorAll('._cat').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('._cat').forEach(b => b.classList.remove('on'));
   document.querySelector('._cat[data-val="all"]')?.classList.add('on');
-  if(typeof window.renderProducts==='function') window.renderProducts();
-});
-clear.addEventListener('click', () => {
-  field.value=''; field.blur();
-  clear.classList.remove('visible');
-  window.searchQuery='';
-  if(typeof window.renderProducts==='function') window.renderProducts();
+  if (typeof window.renderProducts === 'function') window.renderProducts();
 });
 
-// ── CATEGORIES ────────────────────────────────────────────────────────────────
+clear.addEventListener('click', () => {
+  field.value = ''; field.blur();
+  clear.classList.remove('visible');
+  window.searchQuery = '';
+  if (typeof window.renderProducts === 'function') window.renderProducts();
+});
+
+// ── CATEGORY LOGIC ────────────────────────────────────────────────────────────
 catStrip.addEventListener('click', e => {
-  const btn = e.target.closest('._cat'); if(!btn) return;
-  document.querySelectorAll('._cat').forEach(b=>b.classList.remove('on'));
+  const btn = e.target.closest('._cat'); if (!btn) return;
+  document.querySelectorAll('._cat').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   window.currentFilter = btn.dataset.val;
   window.searchQuery = '';
-  field.value=''; clear.classList.remove('visible');
-  if(typeof window.renderProducts==='function') window.renderProducts();
-  btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  field.value = ''; clear.classList.remove('visible');
+  if (typeof window.renderProducts === 'function') window.renderProducts();
+  btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
 });
 
-// ── BADGES ────────────────────────────────────────────────────────────────────
-function _badges() {
-  const cnt = (window.cart||[]).reduce((s,i)=>s+(i.qty||1),0);
-  document.getElementById('_cartPill')?.classList.toggle('show', cnt>0);
-  const cc = document.getElementById('_cpCount'); if(cc) cc.textContent=cnt;
-  const nb = document.getElementById('_nBadge');
-  if(nb){nb.textContent=cnt;nb.classList.toggle('on',cnt>0);}
-  const hdr=document.getElementById('cartCountHeader');
-  if(hdr){hdr.textContent=cnt;hdr.style.display=cnt?'inline-flex':'none';}
-  const old=document.getElementById('cartCount');
-  if(old) old.textContent=cnt;
+// ── FIX: ADD TO CART ON PRODUCT DETAIL PAGE ───────────────────────────────────
+// The detail modal renders a button with id="detailAtcBtn" and onclick="addToCartFromDetail()"
+// Sometimes the function reference is lost — we re-wire it on every modal open
+function _wireDetailAtc() {
+  const btn = document.getElementById('detailAtcBtn');
+  if (!btn) return;
+  // Remove old listeners by cloning
+  const fresh = btn.cloneNode(true);
+  btn.parentNode.replaceChild(fresh, btn);
+  fresh.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (typeof window.addToCartFromDetail === 'function') {
+      window.addToCartFromDetail();
+    }
+  });
 }
 
-// ── FIX: ADD TO CART ON DETAIL PAGE ──────────────────────────────────────────
-// The detail ATC button calls addToCartFromDetail() — make sure it's wired
+// Watch for product detail modal opening
+const detailModal = document.getElementById('productDetailModal');
+if (detailModal) {
+  new MutationObserver((mutations) => {
+    mutations.forEach(m => {
+      if (m.target.classList.contains('active')) {
+        // Wait for render then wire button
+        setTimeout(_wireDetailAtc, 100);
+      }
+    });
+  }).observe(detailModal, {attributes: true, attributeFilter: ['class']});
+}
+
+// Also intercept clicks on the detail ATC button at document level as backup
 document.addEventListener('click', function(e) {
-  const atcBtn = e.target.closest('#detailAtcBtn');
-  if (atcBtn && typeof window.addToCartFromDetail === 'function') {
-    window.addToCartFromDetail();
+  const btn = e.target.closest('#detailAtcBtn');
+  if (btn && !btn.disabled) {
+    if (typeof window.addToCartFromDetail === 'function') {
+      window.addToCartFromDetail();
+    }
   }
 }, true);
 
-// ── FIX: TAPPING PRODUCT OPENS DETAIL PAGE ────────────────────────────────────
-// Delegate from document so it works for dynamically rendered cards too
-document.addEventListener('click', function(e) {
-  // Card image or info tap
-  const card = e.target.closest('.product-card, .new-in-card, ._reccard, .related-item');
-  if (!card) return;
-  // Don't intercept buttons inside cards
-  if (e.target.closest('button, a')) return;
-  // Get product id from onclick attr or data attr
-  const atcBtn = card.querySelector('.card-atc, ._recatc');
-  const onclick = card.getAttribute('onclick') || card.querySelector('[onclick*="openProductDetail"]')?.getAttribute('onclick') || '';
-  const match = onclick.match(/openProductDetail\(['"](.+?)['"]\)/);
-  if (match && typeof window.openProductDetail === 'function') {
-    window.openProductDetail(match[1]);
-  }
-});
-
+// ── UPDATE CART COUNT ON FAB ───────────────────────────────────────────────────
 const _prev = window.updateCartUI;
 window.updateCartUI = function() {
-  if(typeof _prev==='function') _prev();
-  _badges();
+  if (typeof _prev === 'function') _prev();
+  // Keep original FAB badge in sync
+  const cnt = (window.cart||[]).reduce((s,i) => s+(i.qty||1), 0);
+  const fabCount = document.getElementById('cartCount');
+  if (fabCount) fabCount.textContent = cnt;
+  const hdrCount = document.getElementById('cartCountHeader');
+  if (hdrCount) { hdrCount.textContent = cnt; hdrCount.style.display = cnt ? 'inline-flex' : 'none'; }
 };
 
-_badges();
-console.log('✅ UI upgrade v4');
+console.log('✅ UI upgrade v5 — search + categories + ATC fix + original FAB restored');
 })();
