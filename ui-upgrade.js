@@ -1,9 +1,6 @@
 /**
- * NKRUMAH AVE — UI UPGRADE PATCH v6
- * - Bold search + swipeable categories
- * - Original cart FAB kept
- * - ATC fix: no more event interception (was blocking the button)
- * - Cart text overflow fixed
+ * NKRUMAH AVE — UI UPGRADE v7
+ * Fixes category filter, search, compact header
  */
 (function() {
 'use strict';
@@ -12,11 +9,9 @@ const CSS = `
 #mainFilterBar { display: none !important; }
 .cart-fab { display: flex !important; }
 
-/* Compact header */
 header { padding: 8px 12px !important; min-height: 48px !important; }
 header h1, #logoTap { font-size: 0.92em !important; letter-spacing: 2px !important; }
 
-/* Search row */
 #_searchRow {
   background: #0f0f0f;
   padding: 8px 10px 6px;
@@ -59,7 +54,6 @@ header h1, #logoTap { font-size: 0.92em !important; letter-spacing: 2px !importa
   font-size: 0.85em; cursor: pointer; flex-shrink: 0;
 }
 
-/* Category strip */
 #_catStrip {
   background: #0f0f0f;
   padding: 6px 10px 8px;
@@ -86,41 +80,14 @@ header h1, #logoTap { font-size: 0.92em !important; letter-spacing: 2px !importa
 }
 ._cat.on { background: #00ff00; color: #000; border-color: #00ff00; }
 
-/* Fix cart modal overflow */
-#cartModal .modal-content {
-  overflow-x: hidden !important;
-  width: 94% !important;
-  max-width: 540px !important;
-  box-sizing: border-box !important;
-}
-/* Fix cart item text cutoff */
-.cart-item { overflow: hidden !important; }
-._cit { overflow: hidden !important; width: 100% !important; }
-._cbody { min-width: 0 !important; overflow: hidden !important; padding-right: 30px !important; }
-._cname, ._cmeta {
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  max-width: 100% !important;
-  display: block !important;
-}
-
 .container { padding-bottom: 90px !important; }
-
-/* Make detail ATC button look clearly tappable */
-#detailAtcBtn {
-  position: relative !important;
-  z-index: 10 !important;
-  pointer-events: auto !important;
-  touch-action: manipulation !important;
-}
 `;
 
 const style = document.createElement('style');
 style.textContent = CSS;
 document.head.appendChild(style);
 
-// ── SEARCH ROW ────────────────────────────────────────────────────────────────
+// ── BUILD UI ──────────────────────────────────────────────────────────────────
 const searchRow = document.createElement('div');
 searchRow.id = '_searchRow';
 searchRow.innerHTML = `<div id="_searchWrap">
@@ -130,7 +97,6 @@ searchRow.innerHTML = `<div id="_searchWrap">
   <button id="_searchBtn" type="button">🔍</button>
 </div>`;
 
-// ── CATEGORY STRIP ────────────────────────────────────────────────────────────
 const cats = ['All','Tees','Shorts','Hoodies','Shoes','Bags','Other'];
 const catStrip = document.createElement('div');
 catStrip.id = '_catStrip';
@@ -138,74 +104,138 @@ catStrip.innerHTML = cats.map((c,i) =>
   `<button class="_cat${i===0?' on':''}" data-val="${c.toLowerCase()}" type="button">${c}</button>`
 ).join('');
 
-// ── INJECT ────────────────────────────────────────────────────────────────────
 const header = document.querySelector('header');
 if (header) {
   header.after(searchRow);
   searchRow.after(catStrip);
 }
 
-// ── SEARCH ────────────────────────────────────────────────────────────────────
+// ── OVERRIDE renderProducts to respect filter ─────────────────────────────────
+// Wait for original functions to load, then replace renderProducts
+function _patchRender() {
+  if (typeof window.renderProducts !== 'function') return;
+
+  window.renderProducts = function() {
+    // Render new-in row if it exists
+    if (typeof window.renderNewIn === 'function') window.renderNewIn();
+
+    const grid = document.getElementById('productsGrid');
+    if (!grid) return;
+
+    let list = [...(window.products || [])];
+
+    // Apply category filter
+    const cat = window._activeFilter || 'all';
+    if (cat !== 'all') {
+      list = list.filter(p => p.category === cat);
+    }
+
+    // Apply search
+    const q = (window._searchQuery || '').toLowerCase().trim();
+    if (q) {
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.brand && p.brand.toLowerCase().includes(q))
+      );
+    }
+
+    if (!list.length) {
+      const msg = cat !== 'all'
+        ? `No ${cat} available right now. Check back soon! 👀`
+        : 'No products found.';
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#555;padding:60px 20px;font-size:0.9em;">${msg}</div>`;
+      return;
+    }
+
+    // Use existing renderCardHTML if available
+    if (typeof window.renderCardHTML === 'function') {
+      grid.innerHTML = list.map(p => window.renderCardHTML(p)).join('');
+    } else {
+      // Fallback to original render logic
+      grid.innerHTML = list.map(p => {
+        const media = p.media && p.media.length ? p.media : [{url:null,type:'image'}];
+        const img = media[0];
+        const disc = p.discount ? Math.round(p.price*p.discount/100) : 0;
+        const final = p.price - disc;
+        const inWL = (window.wishlist||[]).includes(p.id);
+        const soldCount = p.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 47 + 5;
+        const imgHTML = img.url
+          ? (img.type==='video'
+              ? `<video src="${img.url}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;"></video>`
+              : `<img src="${img.url}" alt="${p.name}" loading="lazy">`)
+          : `<div class="img-placeholder">${p.category==='shoes'?'👟':'👕'}</div>`;
+        return `<div class="product-card ${!p.available?'sold-out':''}">
+          <div class="img-wrap" onclick="openProductDetail('${p.id}')">
+            ${imgHTML}
+            <div class="badge ${p.available?'av':'so'}">${p.available?'In Stock':'Sold Out'}</div>
+            ${p.discount?`<div class="badge discount">${p.discount}%</div>`:''}
+            ${!p.available?'<div class="sold-out-overlay">SOLD OUT</div>':''}
+            <button class="wishlist-btn-card" onclick="event.stopPropagation();quickWishlist('${p.id}')">${inWL?'❤️':'🤍'}</button>
+          </div>
+          <div class="card-info" onclick="openProductDetail('${p.id}')">
+            <div class="store-badge ${p.store==='Alltime Legits'?'alltime':'nkrumah'}">${p.store==='Alltime Legits'?'🛍️':'🟢'} ${p.store||'Nkrumah Ave'}</div>
+            <div class="card-name">${p.name}</div>
+            <div class="card-brand">${p.brand}</div>
+            <div class="card-price">${p.discount?`<span class="card-orig-price">GHS ${p.price.toLocaleString()}</span>`:''}GHS ${final.toLocaleString()}</div>
+            <div class="sold-count">🛍️ ${soldCount} sold</div>
+            ${p.stock!==undefined?`<div class="card-stock ${p.stock<=3&&p.available?'low':''}">${!p.available?'❌ Out of stock':p.stock<=3?`🔥 Only ${p.stock} left`:`📦 ${p.stock} in stock`}</div>`:''}
+          </div>
+          <div style="padding:0 8px 8px;">
+            <button class="card-atc" onclick="quickAddToCart('${p.id}')" ${!p.available?'disabled':''}>${p.available?'+ ADD TO CART':'SOLD OUT'}</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  };
+}
+
+// ── SEARCH LOGIC ──────────────────────────────────────────────────────────────
 const field = document.getElementById('_searchField');
 const clear = document.getElementById('_searchClear');
 
 field.addEventListener('input', function() {
-  clear.classList.toggle('visible', this.value.trim().length > 0);
-  window.searchQuery = this.value.trim();
-  window.currentFilter = 'all';
+  const val = this.value.trim();
+  clear.classList.toggle('visible', val.length > 0);
+  window._searchQuery = val;
+  window._activeFilter = 'all';
   document.querySelectorAll('._cat').forEach(b => b.classList.remove('on'));
   document.querySelector('._cat[data-val="all"]')?.classList.add('on');
-  if (typeof window.renderProducts === 'function') window.renderProducts();
+  window.renderProducts();
 });
 
 clear.addEventListener('click', () => {
   field.value = ''; field.blur();
   clear.classList.remove('visible');
-  window.searchQuery = '';
-  if (typeof window.renderProducts === 'function') window.renderProducts();
+  window._searchQuery = '';
+  window.renderProducts();
 });
 
-// ── CATEGORIES ────────────────────────────────────────────────────────────────
+// ── CATEGORY LOGIC ────────────────────────────────────────────────────────────
 catStrip.addEventListener('click', e => {
-  const btn = e.target.closest('._cat'); if (!btn) return;
+  const btn = e.target.closest('._cat');
+  if (!btn) return;
+
   document.querySelectorAll('._cat').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
-  window.currentFilter = btn.dataset.val;
-  window.searchQuery = '';
-  field.value = ''; clear.classList.remove('visible');
-  if (typeof window.renderProducts === 'function') window.renderProducts();
+
+  const val = btn.dataset.val;
+  window._activeFilter = val;
+  window._searchQuery = '';
+  field.value = '';
+  clear.classList.remove('visible');
+
+  window.renderProducts();
   btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
 });
 
-// ── FIX DETAIL ATC: patch addToCartFromDetail to also update badge ────────────
-// Wait for the page functions to be available then wrap
-function _patchATC() {
-  if (typeof window.addToCartFromDetail !== 'function') return;
-  const _orig = window.addToCartFromDetail;
-  window.addToCartFromDetail = function() {
-    _orig.apply(this, arguments);
-    // Update FAB badge count
-    const cnt = (window.cart||[]).reduce((s,i) => s+(i.qty||1), 0);
-    const fc = document.getElementById('cartCount'); if(fc) fc.textContent = cnt;
-    const hc = document.getElementById('cartCountHeader');
-    if(hc){hc.textContent=cnt;hc.style.display=cnt?'inline-flex':'none';}
-  };
-}
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window._activeFilter = 'all';
+window._searchQuery = '';
 
-// Patch immediately and also after a short delay (in case scripts load async)
-_patchATC();
-setTimeout(_patchATC, 1000);
-setTimeout(_patchATC, 2500);
+// Patch render after everything loads
+_patchRender();
+setTimeout(_patchRender, 500);
+setTimeout(_patchRender, 1500);
 
-// ── BADGE SYNC ────────────────────────────────────────────────────────────────
-const _prevUI = window.updateCartUI;
-window.updateCartUI = function() {
-  if (typeof _prevUI === 'function') _prevUI();
-  const cnt = (window.cart||[]).reduce((s,i) => s+(i.qty||1), 0);
-  const fc = document.getElementById('cartCount'); if(fc) fc.textContent = cnt;
-  const hc = document.getElementById('cartCountHeader');
-  if(hc){hc.textContent=cnt;hc.style.display=cnt?'inline-flex':'none';}
-};
-
-console.log('✅ UI upgrade v6 loaded');
+console.log('✅ UI upgrade v7 — category filter fixed');
 })();
