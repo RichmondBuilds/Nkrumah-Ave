@@ -1,7 +1,6 @@
 /**
- * NKRUMAH AVE — CART UPGRADES v5
- * KEY CHANGE: Does NOT override addToCartFromDetail or quickAddToCart
- * Original index.html functions handle adding — we only enhance the display
+ * NKRUMAH AVE — CART UPGRADES v6
+ * Fix: cart variable sync between index.html closure and window
  */
 (function() {
 'use strict';
@@ -27,8 +26,8 @@ const CSS = `
 ._ti { width:44px; height:44px; border-radius:8px; overflow:hidden; background:#1a1a1a; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.4em; border:1px solid #2a2a2a; }
 ._ti img { width:100%; height:100%; object-fit:cover; }
 ._tn { flex:1; min-width:0; }
-._tn b  { display:block; font-size:.78em; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-._tn s  { display:block; font-size:.8em; color:#00ff00; font-weight:bold; text-decoration:none; }
+._tn b     { display:block; font-size:.78em; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+._tn s     { display:block; font-size:.8em; color:#00ff00; font-weight:bold; text-decoration:none; }
 ._tn small { display:block; font-size:.62em; color:#666; }
 ._tv { background:#00ff00; color:#000; border:none; border-radius:8px; padding:6px 9px; font-size:.62em; font-weight:bold; cursor:pointer; white-space:nowrap; flex-shrink:0; }
 
@@ -103,7 +102,7 @@ document.body.appendChild(toast);
 const mc = document.querySelector('#cartModal .modal-content');
 if (mc) { const rd = document.createElement('div'); rd.id='_cartRecsContainer'; mc.appendChild(rd); }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────────
 const FREE_SHIP = 200;
 let savedForLater = [];
 try { savedForLater = JSON.parse(localStorage.getItem('nkrumah_saved')||'[]'); } catch(e){}
@@ -112,6 +111,22 @@ function _saveSFL() { localStorage.setItem('nkrumah_saved', JSON.stringify(saved
 function _getP(id)   { return (window.products||[]).find(p=>p.id===id); }
 function _getImg(id) { const p=_getP(id); return p&&p.media&&p.media[0]&&p.media[0].url?p.media[0].url:null; }
 function _final(p)   { return p.discount?p.price-Math.round(p.price*p.discount/100):p.price; }
+
+// ── KEY FIX: get cart from wherever it lives ──────────────────────────────────
+// index.html declares `let cart = []` in a closure — we can't access it directly
+// BUT the original saveCart() does localStorage.setItem('nkrumah_cart', JSON.stringify(cart))
+// So we read from localStorage to always get the true current cart
+function _getCart() {
+  try { return JSON.parse(localStorage.getItem('nkrumah_cart')||'[]'); } catch(e){ return []; }
+}
+function _setCart(arr) {
+  try { localStorage.setItem('nkrumah_cart', JSON.stringify(arr)); } catch(e){}
+  // Also try to sync window.cart if accessible
+  if (Array.isArray(window.cart)) {
+    window.cart.length = 0;
+    arr.forEach(i => window.cart.push(i));
+  }
+}
 
 function _bounce() {
   const f=document.querySelector('.cart-fab'); if(!f)return;
@@ -128,10 +143,9 @@ function _showToast(p, imgSrc) {
   _tt=setTimeout(()=>t.className='out',3000);
 }
 
-// ── FLY ANIMATION ─────────────────────────────────────────────────────────────
+// ── FLY ───────────────────────────────────────────────────────────────────────
 function _fly(btn, productId) {
-  const p=_getP(productId), imgSrc=_getImg(productId);
-  const fab=document.querySelector('.cart-fab');
+  const p=_getP(productId), imgSrc=_getImg(productId), fab=document.querySelector('.cart-fab');
   if(btn&&fab){
     try{
       const sr=btn.getBoundingClientRect(),dr=fab.getBoundingClientRect();
@@ -151,60 +165,71 @@ function _fly(btn, productId) {
   _showToast(p, imgSrc);
 }
 
-// ── GLOBAL FUNCTIONS (called from rendered HTML) ──────────────────────────────
-window._updateQty = function(idx,delta){
-  if(!window.cart||!window.cart[idx])return;
-  window.cart[idx].qty=Math.max(1,(window.cart[idx].qty||1)+delta);
-  window.saveCart(); window.updateCartUI();
+// ── GLOBAL CART ACTIONS ───────────────────────────────────────────────────────
+window._updateQty = function(idx, delta) {
+  const cart = _getCart();
+  if(!cart[idx])return;
+  cart[idx].qty = Math.max(1,(cart[idx].qty||1)+delta);
+  _setCart(cart);
+  window.updateCartUI();
 };
-window._removeItem = function(idx){
-  if(!window.cart)return;
-  window.cart.splice(idx,1); window.saveCart(); window.updateCartUI();
+window._removeItem = function(idx) {
+  const cart = _getCart();
+  cart.splice(idx,1);
+  _setCart(cart);
+  window.updateCartUI();
 };
-window._saveForLater = function(idx){
-  if(!window.cart)return;
-  savedForLater.push(window.cart.splice(idx,1)[0]); _saveSFL();
-  window.saveCart(); window.updateCartUI();
+window._saveForLater = function(idx) {
+  const cart = _getCart();
+  savedForLater.push(cart.splice(idx,1)[0]);
+  _saveSFL(); _setCart(cart);
+  window.updateCartUI();
   window.showNotification('💾 Saved for later');
 };
-window._moveToCart = function(idx){
-  const item=savedForLater.splice(idx,1)[0]; _saveSFL();
-  // Use original cart push so no conflict
-  if(!window.cart)window.cart=[];
-  item.qty=1; window.cart.push(item);
-  window.saveCart(); window.updateCartUI();
+window._moveToCart = function(idx) {
+  const item = savedForLater.splice(idx,1)[0];
+  _saveSFL();
+  const cart = _getCart();
+  item.qty = 1; cart.push(item);
+  _setCart(cart);
+  window.updateCartUI();
   window.showNotification('✅ Moved to cart');
 };
-window._recAdd = function(id,btn){
+window._recAdd = function(id, btn) {
   const p=_getP(id); if(!p||!p.available)return;
-  if(!window.cart)window.cart=[];
-  const f=_final(p);
-  window.cart.push({id:Date.now(),productId:p.id,name:p.name,brand:p.brand,price:f,size:(p.sizes&&p.sizes[0])||'',color:(p.colors&&p.colors[0])||'',qty:1});
-  window.saveCart(); window.updateCartUI(); _fly(btn,id);
+  const cart = _getCart();
+  const ex = cart.find(i=>i.productId===id);
+  if(ex){ ex.qty=(ex.qty||1)+1; } 
+  else { cart.push({id:Date.now(),productId:p.id,name:p.name,brand:p.brand,price:_final(p),size:(p.sizes&&p.sizes[0])||'',color:(p.colors&&p.colors[0])||'',qty:1}); }
+  _setCart(cart);
+  window.updateCartUI();
+  _fly(btn, id);
 };
 
 // ── STICKY BAR ────────────────────────────────────────────────────────────────
-function _sticky(){
+function _sticky() {
   const bar=document.getElementById('_stickyBar'),amt=document.getElementById('_stpamt');
-  if(!bar||!window.cart)return;
-  if(!window.cart.length){bar.classList.remove('on');return;}
-  let b=window.cart.reduce((s,i)=>s+i.price*(i.qty||1),0);
+  if(!bar)return;
+  const cart=_getCart();
+  if(!cart.length){bar.classList.remove('on');return;}
+  let b=cart.reduce((s,i)=>s+i.price*(i.qty||1),0);
   if(window.appliedCoupon&&window.appliedCoupon.type==='percent')b-=Math.round(b*window.appliedCoupon.discount/100);
-  if(amt)amt.textContent='GHS '+b.toLocaleString(); bar.classList.add('on');
+  if(amt)amt.textContent='GHS '+b.toLocaleString();
+  bar.classList.add('on');
 }
 
 // ── SHIPPING BAR ──────────────────────────────────────────────────────────────
-function _shipBar(){
-  if(!window.cart||!window.cart.length)return'';
-  const tot=window.cart.reduce((s,i)=>s+i.price*(i.qty||1),0);
+function _shipBar(cart) {
+  if(!cart.length)return'';
+  const tot=cart.reduce((s,i)=>s+i.price*(i.qty||1),0);
   const pct=Math.min(100,Math.round(tot/FREE_SHIP*100));
   if(tot>=FREE_SHIP)return'<div class="_ship"><div class="_shipdone">🎉 You qualify for free shipping!</div></div>';
   return`<div class="_ship"><div class="_shiplbl"><span>Free shipping</span><span>GHS ${(FREE_SHIP-tot).toLocaleString()} away</span></div><div class="_shiptrack"><div class="_shipfill" style="width:${pct}%"></div></div></div>`;
 }
 
 // ── RECS ──────────────────────────────────────────────────────────────────────
-function _recs(){
-  const ids=(window.cart||[]).map(i=>i.productId);
+function _recs(cart) {
+  const ids=cart.map(i=>i.productId);
   const list=(window.products||[]).filter(p=>!ids.includes(p.id)&&p.available).slice(0,6);
   if(!list.length)return'';
   return'<div class="_recs"><div class="_recstitle">You might also like</div><div class="_recsrow">'+list.map(p=>{
@@ -213,43 +238,51 @@ function _recs(){
   }).join('')+'</div></div>';
 }
 
-// ── OVERRIDE updateCartUI ONLY ────────────────────────────────────────────────
-// We only override the display — NOT the add functions
-const _origUpdateCartUI = window.updateCartUI;
-window.updateCartUI = function(){
+// ── OVERRIDE updateCartUI — reads from localStorage ───────────────────────────
+window.updateCartUI = function() {
+  // Always read fresh from localStorage — source of truth
+  const cart = _getCart();
+  const cnt  = cart.reduce((s,i)=>s+(i.qty||1),0);
 
-  // Sync badge counts
-  const cnt=(window.cart||[]).reduce((s,i)=>s+(i.qty||1),0);
+  // Sync window.cart so original checkout functions work
+  if (Array.isArray(window.cart)) {
+    window.cart.length = 0;
+    cart.forEach(i => window.cart.push(i));
+  }
+
+  // Update badges
   const fc=document.getElementById('cartCount'); if(fc)fc.textContent=cnt;
   const hc=document.getElementById('cartCountHeader');
   if(hc){hc.textContent=cnt;hc.style.display=cnt?'inline-flex':'none';}
 
-  const itemsEl=document.getElementById('cartItems');
-  const emptyEl=document.getElementById('emptyCartMsg');
-  const summaryEl=document.getElementById('cartSummary');
+  const itemsEl   = document.getElementById('cartItems');
+  const emptyEl   = document.getElementById('emptyCartMsg');
+  const summaryEl = document.getElementById('cartSummary');
   if(!itemsEl)return;
 
-  const hasCart=(window.cart||[]).length>0;
-  const hasSaved=savedForLater.length>0;
+  const hasCart  = cart.length > 0;
+  const hasSaved = savedForLater.length > 0;
 
-  if(!hasCart&&!hasSaved){
+  if(!hasCart && !hasSaved){
     itemsEl.innerHTML='';
-    if(emptyEl)emptyEl.style.display='block';
+    if(emptyEl)  emptyEl.style.display='block';
     if(summaryEl)summaryEl.style.display='none';
     _sticky(); return;
   }
-  if(emptyEl)emptyEl.style.display='none';
+  if(emptyEl)  emptyEl.style.display='none';
   if(summaryEl)summaryEl.style.display='block';
 
-  let base=(window.cart||[]).reduce((s,i)=>s+i.price*(i.qty||1),0),disc=0;
-  if(window.appliedCoupon&&window.appliedCoupon.type==='percent')disc=Math.round(base*window.appliedCoupon.discount/100);
+  let base=cart.reduce((s,i)=>s+i.price*(i.qty||1),0), disc=0;
+  if(window.appliedCoupon&&window.appliedCoupon.type==='percent')
+    disc=Math.round(base*window.appliedCoupon.discount/100);
 
-  let html=hasCart?_shipBar():'';
-  html+=(window.cart||[]).map((item,i)=>{
-    const imgSrc=_getImg(item.productId);
-    const imgHTML=imgSrc?`<img src="${imgSrc}">`:(item.category==='shoes'?'👟':'👕');
-    const qty=item.qty||1;
-    return`<div class="cart-item">
+  let html = hasCart ? _shipBar(cart) : '';
+
+  html += cart.map((item,i) => {
+    const imgSrc = _getImg(item.productId);
+    const imgHTML = imgSrc ? `<img src="${imgSrc}">` : (item.category==='shoes'?'👟':'👕');
+    const qty = item.qty||1;
+    return `<div class="cart-item">
       <button class="_crm" onclick="_removeItem(${i})">✕</button>
       <div class="_cit">
         <div class="_cimg">${imgHTML}</div>
@@ -276,58 +309,56 @@ window.updateCartUI = function(){
     }).join('')+'</div>';
   }
 
-  itemsEl.innerHTML=html;
+  itemsEl.innerHTML = html;
 
-  const totalEl=document.getElementById('totalAmount');
-  if(totalEl)totalEl.innerHTML=disc>0
-    ?`<span style="text-decoration:line-through;opacity:.5;font-size:.85em;">GHS ${base.toLocaleString()}</span> → GHS ${(base-disc).toLocaleString()}`
-    :`Total: GHS ${(base-disc).toLocaleString()}`;
+  const totalEl = document.getElementById('totalAmount');
+  if(totalEl) totalEl.innerHTML = disc>0
+    ? `<span style="text-decoration:line-through;opacity:.5;font-size:.85em;">GHS ${base.toLocaleString()}</span> → GHS ${(base-disc).toLocaleString()}`
+    : `Total: GHS ${(base-disc).toLocaleString()}`;
 
-  const rc=document.getElementById('_cartRecsContainer');
-  if(rc)rc.innerHTML=_recs();
+  const rc = document.getElementById('_cartRecsContainer');
+  if(rc) rc.innerHTML = _recs(cart);
+
   _sticky();
 };
 
-// ── HOOK INTO ORIGINAL addToCartFromDetail FOR TOAST + FLY ───────────────────
-// We don't replace it — we just add visual feedback after it runs
-function _hookATC() {
-  const _orig = window.addToCartFromDetail;
-  if (!_orig || _orig._hooked) return;
+// ── HOOK addToCartFromDetail FOR TOAST + FLY (don't replace it) ───────────────
+function _hook() {
+  const orig = window.addToCartFromDetail;
+  if(!orig || orig._hooked) return;
   window.addToCartFromDetail = function() {
-    _orig.apply(this, arguments);
-    // Add visual feedback
-    const id = window.currentDetailId;
-    if (id) _showToast(_getP(id), _getImg(id));
-    _bounce();
+    orig.apply(this, arguments);
+    // Give localStorage a moment to be written by saveCart()
+    setTimeout(() => {
+      window.updateCartUI();
+      const id = window.currentDetailId;
+      if(id) { _showToast(_getP(id), _getImg(id)); _bounce(); }
+    }, 50);
   };
   window.addToCartFromDetail._hooked = true;
 }
 
-// Hook immediately and after delays to ensure original is loaded
-_hookATC();
-setTimeout(_hookATC, 500);
-setTimeout(_hookATC, 1500);
-
-// ── HOOK quickAddToCart FOR FLY ANIMATION ─────────────────────────────────────
-function _hookQuickAdd() {
-  const _orig = window.quickAddToCart;
-  if (!_orig || _orig._hooked) return;
+function _hookQuick() {
+  const orig = window.quickAddToCart;
+  if(!orig || orig._hooked) return;
   window.quickAddToCart = function(id) {
-    _orig.apply(this, arguments);
+    orig.apply(this, arguments);
+    setTimeout(() => window.updateCartUI(), 50);
     _fly(event&&event.currentTarget?event.currentTarget:null, id);
   };
   window.quickAddToCart._hooked = true;
 }
-_hookQuickAdd();
-setTimeout(_hookQuickAdd, 500);
-setTimeout(_hookQuickAdd, 1500);
 
-// ── SHAKE REMINDER ────────────────────────────────────────────────────────────
+_hook(); _hookQuick();
+setTimeout(() => { _hook(); _hookQuick(); }, 800);
+setTimeout(() => { _hook(); _hookQuick(); }, 2000);
+
+// ── SHAKE ─────────────────────────────────────────────────────────────────────
 let _idleT;
 function _resetIdle(){
   clearTimeout(_idleT);
   _idleT=setTimeout(()=>{
-    if(window.cart&&window.cart.length>0){
+    if(_getCart().length>0){
       const f=document.querySelector('.cart-fab');if(!f)return;
       f.classList.add('cart-fab-shake');setTimeout(()=>f.classList.remove('cart-fab-shake'),1000);
     }
@@ -337,7 +368,33 @@ function _resetIdle(){
 _resetIdle();
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-if(window.cart)window.cart.forEach(i=>{if(!i.qty)i.qty=1;});
 window.updateCartUI();
-console.log('✅ cart-upgrades v5 — no ATC override, original functions untouched');
+console.log('✅ cart-upgrades v6 — reads from localStorage, no closure conflict');
 })();
+
+// ── SYNC LOCAL cart TO window.cart ───────────────────────────────────────────
+// index.html uses a local `cart` variable inside a closure.
+// We intercept saveCart (which IS called after every add) to sync it.
+function _syncCart() {
+  const _origSave = window.saveCart;
+  if (!_origSave || _origSave._synced) return;
+  window.saveCart = function() {
+    _origSave.apply(this, arguments);
+    // After save, read from localStorage to get the true cart state
+    try {
+      const stored = localStorage.getItem('nkrumah_cart');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Migrate qty field
+        parsed.forEach(i => { if (!i.qty) i.qty = 1; });
+        window.cart = parsed;
+      }
+    } catch(e) {}
+    window.updateCartUI();
+  };
+  window.saveCart._synced = true;
+}
+
+_syncCart();
+setTimeout(_syncCart, 300);
+setTimeout(_syncCart, 1000);
