@@ -1542,10 +1542,10 @@ async function checkPassword(){
   const entered=document.getElementById('passwordInput').value;
   if(!entered)return;
   try{
-    const {getFirestore,doc,getDoc}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-    const db=getFirestore();
-    const snap=await getDoc(doc(db,'config','admin'));
-    if(snap.exists()&&snap.data().password===entered){
+    const response=await fetch(`https://firestore.googleapis.com/v1/projects/nkrumah-ave/databases/(default)/documents/config/admin`);
+    const data=await response.json();
+    const pw=data.fields?.password?.stringValue;
+    if(pw&&pw===entered){
       closePasswordModal();toggleAdminMode(true);
     }else{
       document.getElementById('wrongMsg').style.display='block';
@@ -1555,7 +1555,6 @@ async function checkPassword(){
     document.getElementById('wrongMsg').style.display='block';
   }
 }
-
 function closePasswordModal(){document.getElementById('passwordModal').classList.remove('active');document.getElementById('passwordInput').value='';document.getElementById('wrongMsg').style.display='none';}
 function toggleAdminMode(on){isAdmin=on;if(on)window.fbSignInAdmin();document.getElementById('adminBanner').classList.toggle('visible',on);document.getElementById('mainContainer').classList.toggle('admin-mode-active',on);window.renderProducts();}
 
