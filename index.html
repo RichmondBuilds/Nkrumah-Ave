@@ -907,7 +907,24 @@ signInAnonymously(auth).catch(e => console.log('anon auth:', e));
 const WHATSAPP='233207447665', ADMIN_PW='nkrumah2025', CLOUD_NAME='dxjshhjdx', UPLOAD_PRESET='nkrumah_ave';
 const CLOTHING_SIZES=['XS','S','M','L','XL','XXL','XXXL'], SHOE_SIZES=['36','37','38','39','40','41','42','43','44','45','46'];
 const SIZE_GUIDE={ tees:{'XS':'84cm','S':'89cm','M':'94cm','L':'99cm','XL':'104cm','XXL':'109cm','XXXL':'114cm'}, shoes:{'36':'22.5cm','37':'23cm','38':'23.5cm','39':'24cm','40':'24.5cm','41':'25cm','42':'25.5cm','43':'26cm','44':'26.5cm','45':'27cm','46':'27.5cm'} };
-const DELIVERY_FEES=[{region:'Greater Accra',fee:'GHS 15',time:'1–2 days'},{region:'Ashanti',fee:'GHS 25',time:'2–3 days'},{region:'Eastern',fee:'GHS 20',time:'1–2 days'},{region:'Central',fee:'GHS 25',time:'2–3 days'},{region:'Western',fee:'GHS 30',time:'3–4 days'},{region:'Volta',fee:'GHS 25',time:'2–3 days'},{region:'Northern',fee:'GHS 40',time:'3–5 days'},{region:'Upper East',fee:'GHS 45',time:'4–5 days'},{region:'Upper West',fee:'GHS 45',time:'4–5 days'},{region:'Brong-Ahafo',fee:'GHS 35',time:'3–4 days'},{region:'Oti',fee:'GHS 30',time:'3–4 days'},{region:'Savannah',fee:'GHS 40',time:'4–5 days'},{region:'North East',fee:'GHS 45',time:'4–5 days'},{region:'Western North',fee:'GHS 35',time:'3–4 days'},{region:'Ahafo',fee:'GHS 35',time:'3–4 days'},{region:'Bono East',fee:'GHS 35',time:'3–4 days'}];
+const DELIVERY_FEES=[
+{region:'Greater Accra',fee:'GHS 30',time:'Same Day – 1 Day'},
+{region:'Ashanti',fee:'GHS 30',time:'1–2 Days'},
+{region:'Central',fee:'GHS 30',time:'1–2 Days'},
+{region:'Western',fee:'GHS 30',time:'1–2 Days'},
+{region:'Eastern',fee:'GHS 38',time:'1–2 Days'},
+{region:'Volta',fee:'GHS 38',time:'1–2 Days'},
+{region:'Bono',fee:'GHS 38',time:'2–3 Days'},
+{region:'Bono East',fee:'GHS 38',time:'2–3 Days'},
+{region:'Oti',fee:'GHS 42',time:'2–4 Days'},
+{region:'Western North',fee:'GHS 42',time:'2–4 Days'},
+{region:'Ahafo',fee:'GHS 42',time:'2–4 Days'},
+{region:'Northern',fee:'GHS 50',time:'3–5 Days'},
+{region:'Upper East',fee:'GHS 50',time:'3–6 Days'},
+{region:'Upper West',fee:'GHS 50',time:'3–6 Days'},
+{region:'Savannah',fee:'GHS 50',time:'3–6 Days'},
+{region:'North East',fee:'GHS 50',time:'3–6 Days'}
+];
 const FAQS=[{q:'How do I place an order?',a:'Browse the store, select size and color, tap ADD TO CART, then checkout via WhatsApp or Mobile Money.'},{q:'Do you deliver across Ghana?',a:'Yes! All 16 regions. Tap Delivery to see fees by region.'},{q:'How long does delivery take?',a:'1–5 business days depending on region, after dispatch within 1–2 days of payment.'},{q:'How do I pay?',a:'MTN Mobile Money, Vodafone Cash, or WhatsApp order confirmation.'},{q:'Can I exchange if it doesn\'t fit?',a:'Yes — 7-day exchange policy. Contact us within 7 days of receiving.'},{q:'Are products authentic?',a:'All products are carefully sourced. Descriptions state whether branded originals or quality streetwear.'},{q:'Can I pre-order?',a:'Yes! Tap Pre-Order and fill in what you want. We\'ll reach out once items arrive.'},{q:'How do I track my order?',a:'Tap Track Order and enter your WhatsApp number, or message us directly.'}];
 const COUPONS={'NKRUMAH10':{discount:10,type:'percent',label:'10% off'},'LAUNCH20':{discount:20,type:'percent',label:'20% off launch'},'FREESHIP':{discount:0,type:'shipping',label:'Free delivery'}};
 
