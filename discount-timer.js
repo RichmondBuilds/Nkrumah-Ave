@@ -1,0 +1,210 @@
+/**
+ * NKRUMAH AVE — DISCOUNT TIMER PATCH
+ * Adds expiry timer to discounted products
+ * No changes needed to index.html
+ */
+(function() {
+
+// ── CSS ─────────────────────────────────────────────────────────────[...]
+const st = document.createElement('style');
+st.textContent = `
+.disc-timer { font-size:0.6em; color:#ff6b00; font-weight:bold; margin-top:2px; }
+.disc-timer.urgent { color:#ff4444; animation:pulse 1.2s infinite; }
+.detail-disc-timer { font-size:0.78em; color:#ff6b00; font-weight:bold; margin-bottom:8px; }
+.detail-disc-timer.urgent { color:#ff4444; animation:pulse 1.2s infinite; }
+#expiryGroup { margin-top:8px; }
+`;
+document.head.appendChild(st);
+
+// ── HELPERS ───────────────────────────────────────────────────────────…[...]
+function getEffDisc(p) {
+    if (!p.discount) return 0;
+    if (p.discountExpiry && Date.now() > p.discountExpiry) return 0;
+    return p.discount;
+}
+
+function timeLeft(expiry) {
+    const d = expiry - Date.now();
+    if (d <= 0) return null;
+    const h = Math.floor(d / 3600000), m = Math.floor((d % 3600000) / 60000), s = Math.floor((d % 60000) / 1000);
+    if (h >= 24) return Math.floor(h/24) + 'd ' + (h%24) + 'h left';
+    if (h > 0) return h + 'h ' + m + 'm left';
+    return m + 'm ' + s + 's left';
+}
+
+function timerHTML(p, cls) {
+    if (!p.discount || !p.discountExpiry) return '';
+    const left = timeLeft(p.discountExpiry);
+    if (!left) return '';
+    const urgent = (p.discountExpiry - Date.now()) < 3600000;
+    return `<div class="${cls}${urgent ? ' urgent' : ''}">⏱ ${left}</div>`;
+}
+
+// ── PATCH renderProducts ──────────────────────────────────────────────────────
+const _origRender = window.renderProducts;
+window.renderProducts = function() {
+    renderNewIn();
+    const grid = document.getElementById('productsGrid');
+    let list = window.products;
+    if (currentFilter !== 'all') list = list.filter(p => p.category === currentFilter);
+    if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q));
+    }
+    if (!list.length) {
+        grid.innerHTML = `<div class="empty-grid" style="grid-column:1/-1">${isAdmin ? 'No products. Tap + ADD PRODUCT.' : 'No products yet. Check back soon!'}</div>`;
+        return;
+    }
+    grid.innerHTML = list.map(p => {
+        const media = p.media && p.media.length ? p.media : [{url:null,type:'image'}];
+        const img = media[0];
+        const effDisc = getEffDisc(p);
+        const disc = effDisc ? Math.round(p.price * effDisc / 100) : 0;
+        const final = effDisc ? (p.price - disc) : p.price;
+        const reviews = getProductReviews(p.id);
+        const avg = reviews.length ? (reviews.reduce((s,r) => s+r.rating, 0) / reviews.length).toFixed(1) : null;
+        const inWL = wishlist.includes(p.id);
+        const lowStock = p.stock !== undefined && p.stock > 0 && p.stock <= 3;
+        const tagBadge = p.tag === 'new' ? `<div class="badge new-arrival">🆕</div>` : p.tag === 'bestseller' ? `<div class="badge bestseller">🔥</div>` : '';
+        const hasVideo = p.media && p.media.some(m => m.type === 'video');
+        const soldCount = getSoldCount(p.id);
+        const imgHTML = img.url ? (img.type === 'video' ? `<video src="${img.url}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;"></video>` : `<img src="${img.url[...]
+        return `<div class="product-card ${!p.available ? 'sold-out' : ''}">
+            <div class="img-wrap" onclick="openProductDetail('${p.id}')">
+                ${imgHTML}
+                <div class="badge ${p.available ? 'av' : 'so'}">${p.available ? 'In Stock' : 'Sold Out'}</div>
+                ${effDisc ? `<div class="badge discount">${effDisc}%</div>` : ''}
+                ${tagBadge}
+                ${hasVideo ? '<div class="video-indicator">▶ Video</div>' : ''}
+                ${!p.available ? `<div class="sold-out-overlay">SOLD OUT</div>` : ''}
+                <button class="wishlist-btn-card" onclick="event.stopPropagation();quickWishlist('${p.id}')">${inWL ? '❤️' : '🤍'}</button>
+                <button class="edit-overlay-btn" onclick="event.stopPropagation();openEditModal('${p.id}')">✏️</button>
+            </div>
+            <div class="card-info" onclick="openProductDetail('${p.id}')">
+                ${avg ? `<div class="card-stars">${'⭐'.repeat(Math.round(avg))} ${avg}</div>` : ''}
+                <div class="store-badge ${p.store === 'Alltime Legits' ? 'alltime' : 'nkrumah'}">${p.store === 'Alltime Legits' ? '🛍️' : '🟢'} ${p.store || 'Nkrumah Ave'}</div>
+                <div class="card-name">${p.name}</div>
+                <div class="card-brand">${p.brand}</div>
+                <div class="card-price">${effDisc ? `<span class="card-orig-price">GHS ${p.price.toLocaleString()}</span>` : ''}GHS ${final.toLocaleString()}</div>
+                <div class="sold-count">🛍️ ${soldCount} sold</div>
+                ${timerHTML(p, 'disc-timer')}
+                ${p.stock !== undefined ? `<div class="card-stock ${lowStock ? 'low' : ''}">${!p.available ? '❌ Out of stock' : lowStock ? `🔥 Only ${p.stock} left` : `📦 ${p.stock} in stock[...]
+            </div>
+            <div style="padding:0 8px 8px;">
+                <button class="card-atc" onclick="quickAddToCart('${p.id}')" ${!p.available ? 'disabled' : ''}>${p.available ? '+ ADD TO CART' : 'SOLD OUT'}</button>
+                <div class="admin-card-actions">
+                    <button class="stock-btn ${p.available ? 'av' : 'so'}" onclick="toggleStock('${p.id}')">${p.available ? 'Sold Out' : 'Available'}</button>
+                    <button class="del-btn" onclick="deleteProduct('${p.id}')">🗑</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+};
+
+// ── PATCH openEditModal — add expiry field ────────────────────────────────────
+const _origOpenEdit = window.openEditModal;
+window.openEditModal = function(id) {
+    _origOpenEdit(id);
+    _injectExpiryField();
+    const p = window.products.find(p => p.id === id);
+    if (p && p.discountExpiry) {
+        const dt = new Date(p.discountExpiry);
+        document.getElementById('editDiscountExpiry').value = dt.toISOString().slice(0, 16);
+        document.getElementById('expiryGroup').style.display = 'block';
+    } else {
+        const f = document.getElementById('editDiscountExpiry');
+        if (f) f.value = '';
+        const g = document.getElementById('expiryGroup');
+        if (g) g.style.display = p && p.discount ? 'block' : 'none';
+    }
+};
+
+const _origOpenAdd = window.openAddModal;
+window.openAddModal = function() {
+    _origOpenAdd();
+    _injectExpiryField();
+    const g = document.getElementById('expiryGroup');
+    if (g) g.style.display = 'none';
+};
+
+function _injectExpiryField() {
+    if (document.getElementById('expiryGroup')) return;
+    const discField = document.getElementById('editDiscount');
+    if (!discField) return;
+    const wrap = discField.closest('.form-group');
+    if (!wrap) return;
+    discField.setAttribute('oninput', 'window._toggleExpiry()');
+    const grp = document.createElement('div');
+    grp.className = 'form-group';
+    grp.id = 'expiryGroup';
+    grp.style.display = 'none';
+    grp.innerHTML = `<label>⏱ Discount Ends (date & time)</label><input type="datetime-local" id="editDiscountExpiry">`;
+    wrap.after(grp);
+}
+
+window._toggleExpiry = function() {
+    const d = document.getElementById('editDiscount').value;
+    const g = document.getElementById('expiryGroup');
+    if (g) g.style.display = d > 0 ? 'block' : 'none';
+};
+
+// ── PATCH saveProductEdit — save expiry ───────────────────────────────────────
+const _origSave = window.saveProductEdit;
+window.saveProductEdit = async function() {
+    // Intercept before save to inject discountExpiry
+    const expiryInput = document.getElementById('editDiscountExpiry');
+    const discount = parseFloat(document.getElementById('editDiscount').value) || 0;
+    window._pendingExpiry = (discount && expiryInput && expiryInput.value)
+        ? new Date(expiryInput.value).getTime()
+        : null;
+    await _origSave();
+};
+
+// Hook fbSaveProduct and fbUpdateProduct to inject expiry
+const _origFbSave = window.fbSaveProduct;
+window.fbSaveProduct = async function(d) {
+    if (window._pendingExpiry !== undefined) {
+        d.discountExpiry = window._pendingExpiry;
+        window._pendingExpiry = undefined;
+    }
+    return await _origFbSave(d);
+};
+
+const _origFbUpdate = window.fbUpdateProduct;
+window.fbUpdateProduct = async function(id, d) {
+    if (window._pendingExpiry !== undefined) {
+        d.discountExpiry = window._pendingExpiry;
+        window._pendingExpiry = undefined;
+    }
+    return await _origFbUpdate(id, d);
+};
+
+// ── PATCH openProductDetail — show timer ──────────────────────────────────────
+const _origDetail = window.openProductDetail;
+window.openProductDetail = function(id) {
+    _origDetail(id);
+    const p = window.products.find(p => p.id === id);
+    if (!p) return;
+    const effDisc = getEffDisc(p);
+    // Update price in case discount expired
+    const disc = effDisc ? Math.round(p.price * effDisc / 100) : 0;
+    const final = effDisc ? (p.price - disc) : p.price;
+    const priceEl = document.getElementById('detailPrice');
+    if (priceEl) priceEl.textContent = `GHS ${final.toLocaleString()}`;
+    // Inject or update timer
+    let timerEl = document.getElementById('_detailDiscTimer');
+    if (!timerEl) {
+        timerEl = document.createElement('div');
+        timerEl.id = '_detailDiscTimer';
+        timerEl.className = 'detail-disc-timer';
+        const saveEl = document.getElementById('detailSave');
+        if (saveEl) saveEl.after(timerEl);
+    }
+    timerEl.innerHTML = timerHTML(p, 'detail-disc-timer') || '';
+};
+
+// ── AUTO REFRESH every 30 seconds ─────────────────────────────────────────────
+setInterval(() => window.renderProducts(), 30000);
+
+console.log('✅ Discount timer patch loaded');
+})();
